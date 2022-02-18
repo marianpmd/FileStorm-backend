@@ -46,4 +46,16 @@ public class UserService implements UserDetailsService {
 
         return new User(byEmail.getEmail(), byEmail.getPassword(), authorities);
     }
+
+    public UserEntity getUserByEmail(String userEmail) {
+        return this.userRepository.findByEmail(userEmail);
+    }
+
+    public UserDTO registerNewUser(String email, String password) {
+
+        var newUser = new UserEntity(email, password, "todo");
+
+        UserEntity saved = this.userRepository.save(newUser);
+        return userMapper.entityToDTO(saved);
+    }
 }

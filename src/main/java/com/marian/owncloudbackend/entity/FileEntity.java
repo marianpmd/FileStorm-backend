@@ -26,6 +26,14 @@ public class FileEntity {
     @JoinColumn(name = "user_id")
     private UserEntity user;
 
+    public FileEntity(String name, String path, String suffix, Long size, UserEntity user) {
+        this.name = name;
+        this.path = path;
+        this.suffix = suffix;
+        this.size = size;
+        this.user = user;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
