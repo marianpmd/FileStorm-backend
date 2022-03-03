@@ -3,7 +3,6 @@ package com.marian.owncloudbackend.controller;
 import com.marian.owncloudbackend.service.FileStoreService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.file.PathUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,7 +21,7 @@ public class FileController {
 
     @PostMapping("/upload")
     public ResponseEntity<?> uploadFile(final MultipartFile file) throws IOException {
-        log.info("New file to be uploaded : {}" , file);
+        log.info("New file to be uploaded : {}", file);
 
         fileStoreService.uploadNewFile(file);
 

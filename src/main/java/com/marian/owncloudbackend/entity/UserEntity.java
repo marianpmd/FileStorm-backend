@@ -32,9 +32,17 @@ public class UserEntity {
         this.password = password;
         this.role = role;
         this.email = email;
+        this.username = setUsername();
     }
+//
+//    public String getUsername() {
+//        String[] split = this.email.split("@");
+//        return split[0]
+//                .replace("\\/","")
+//                .replace("\\","");
+//    }
 
-    public String getUsername() {
+    public String setUsername() {
         String[] split = this.email.split("@");
         return split[0]
                 .replace("\\/","")

@@ -3,7 +3,6 @@ package com.marian.owncloudbackend.filters;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -13,11 +12,9 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -36,8 +33,8 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 
     private final Base64.Decoder decoder = Base64.getDecoder();
 
-    @Setter
-    private String secret;
+    @Value("${application.secret:secret}")
+    private String secret ;
 
     public CustomAuthenticationFilter(AuthenticationManager authenticationManager) {
         this.authenticationManager = authenticationManager;
@@ -70,8 +67,12 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 
         String refreshToken = createRefreshToken(request, user, algorithm);
 
+        Map<String,String> tokens = new HashMap<>();
+        tokens.put("accessToken",accessToken);
+        tokens.put("refreshToken",refreshToken);
+
         response.setContentType(APPLICATION_JSON_VALUE);
-        response.addCookie(new Cookie("ocl-jwt",accessToken));
+        new ObjectMapper().writeValue(response.getOutputStream(),tokens);
     }
 
     private String createRefreshToken(HttpServletRequest request, User user, Algorithm algorithm) {
@@ -91,4 +92,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
                 .sign(algorithm);
     }
 
+    public void setSecret(String secret) {
+        this.secret = secret;
+    }
 }

@@ -1,7 +1,7 @@
 package com.marian.owncloudbackend.controller;
 
+import com.marian.owncloudbackend.DTO.UserAuthDTO;
 import com.marian.owncloudbackend.DTO.UserDTO;
-import com.marian.owncloudbackend.entity.UserEntity;
 import com.marian.owncloudbackend.service.FileStoreService;
 import com.marian.owncloudbackend.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -18,20 +18,16 @@ public class UserController {
     private final FileStoreService fileStoreService;
 
     @GetMapping("/all")
-    public ResponseEntity<List<UserDTO>> getAllUsers(){
+    public ResponseEntity<List<UserDTO>> getAllUsers() {
         List<UserDTO> allUsers = userService.getAllUsers();
         return ResponseEntity.ok(allUsers);
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerNewUser(String email,String password){
-        UserDTO userDTO = userService.registerNewUser(email, password);
-
+    public ResponseEntity<?> registerNewUser(@RequestBody UserAuthDTO user) {
+        UserDTO userDTO = userService.registerNewUser(user.email(), user.password());
         boolean wasSuccessful = this.fileStoreService.createUserDirectory(userDTO);
-
-
         return ResponseEntity.ok(userDTO);
-
     }
 
 

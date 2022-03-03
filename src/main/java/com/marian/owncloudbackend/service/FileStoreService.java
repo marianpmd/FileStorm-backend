@@ -5,14 +5,12 @@ import com.marian.owncloudbackend.entity.FileEntity;
 import com.marian.owncloudbackend.entity.UserEntity;
 import com.marian.owncloudbackend.repository.FileEntityRepository;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -55,7 +53,7 @@ public class FileStoreService {
 
     public boolean createUserDirectory(UserDTO userDTO) {
         String baseDir = FileStoreUtils.getBaseDir();
-        Path userPath = Paths.get(baseDir,userDTO.username());
+        Path userPath = Paths.get(baseDir,userDTO.email());
         File file = userPath.toFile();
         return file.mkdir();
     }

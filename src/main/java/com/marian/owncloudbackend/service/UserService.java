@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +26,7 @@ public class UserService implements UserDetailsService {
     private final UserMapper userMapper;
 
 
-    public List<UserDTO> getAllUsers(){
+    public List<UserDTO> getAllUsers() {
         List<UserEntity> all = userRepository.findAll();
         return userMapper.entitiesToDTOs(all);
     }
@@ -33,14 +34,10 @@ public class UserService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        UserEntity byEmail = userRepository.findByEmail(email);
+        UserEntity byEmail = userRepository.findByEmail(email)
+                .orElseThrow();
         //check password
-        if (byEmail == null) {
-            log.error("User not found in the db");
-            throw new UsernameNotFoundException("User not found in the db");
-        } else {
-            log.info("User FOUND in the db" + email);
-        }
+        log.info("User FOUND in the db" + email);
         Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
         authorities.add(new SimpleGrantedAuthority(byEmail.getRole()));
 
@@ -48,10 +45,15 @@ public class UserService implements UserDetailsService {
     }
 
     public UserEntity getUserByEmail(String userEmail) {
-        return this.userRepository.findByEmail(userEmail);
+        return this.userRepository.findByEmail(userEmail)
+                .orElseThrow();
     }
 
     public UserDTO registerNewUser(String email, String password) {
+        Optional<UserEntity> byEmail = userRepository.findByEmail(email);
+        if (byEmail.isPresent()){
+            throw new IllegalStateException("User already exists");
+        }
 
         var newUser = new UserEntity(email, password, "todo");
 
