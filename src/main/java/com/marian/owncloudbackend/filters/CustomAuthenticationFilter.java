@@ -18,6 +18,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Period;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
@@ -78,7 +82,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
     private String createRefreshToken(HttpServletRequest request, User user, Algorithm algorithm) {
         return JWT.create()
                 .withSubject(user.getUsername())
-                .withExpiresAt(new Date(System.currentTimeMillis() + 30 * 60 * 1000))//30mins
+                .withExpiresAt(new Date(System.currentTimeMillis() + 3000 * 60 * 1000)) //3000mins
                 .withIssuer(request.getRequestURL().toString())
                 .sign(algorithm);
     }
@@ -86,7 +90,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
     private String createAccessToken(HttpServletRequest request, User user, Algorithm algorithm) {
         return JWT.create()
                 .withSubject(user.getUsername())
-                .withExpiresAt(new Date(System.currentTimeMillis() + 300 * 60 * 1000)) //300mins
+                .withExpiresAt(new Date(System.currentTimeMillis() + 3000 * 60 * 1000)) //3000mins
                 .withIssuer(request.getRequestURL().toString())
                 .withClaim("roles", user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
                 .sign(algorithm);

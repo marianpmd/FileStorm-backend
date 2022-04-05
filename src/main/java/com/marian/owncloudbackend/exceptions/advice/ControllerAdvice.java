@@ -15,7 +15,7 @@ import java.util.Map;
 public class ControllerAdvice {
 
     @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<Object> handleCityNotFoundException(
+    public ResponseEntity<Object> handleUserAlreadyExists(
             RuntimeException ex, WebRequest request) {
 
         Map<String, Object> body = new LinkedHashMap<>();

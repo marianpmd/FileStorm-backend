@@ -1,5 +1,6 @@
 package com.marian.owncloudbackend.entity;
 
+import com.marian.owncloudbackend.enums.FileType;
 import lombok.*;
 import org.hibernate.Hibernate;
 
@@ -12,25 +13,29 @@ import java.util.Objects;
 @Setter
 @ToString
 @RequiredArgsConstructor
+@AllArgsConstructor
 public class FileEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
-
     private String name;
     private String path;
     private String suffix;
     private Long size;
 
+    @Enumerated(EnumType.STRING)
+    private FileType fileType;
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private UserEntity user;
 
-    public FileEntity(String name, String path, String suffix, Long size, UserEntity user) {
+    public FileEntity(String name, String path, String suffix, Long size, FileType fileType, UserEntity user) {
         this.name = name;
         this.path = path;
         this.suffix = suffix;
         this.size = size;
+        this.fileType = fileType;
         this.user = user;
     }
 
