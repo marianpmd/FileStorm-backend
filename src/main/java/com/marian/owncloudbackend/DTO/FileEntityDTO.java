@@ -4,6 +4,7 @@ import com.marian.owncloudbackend.enums.FileType;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.math.BigInteger;
 
 @Data
 public class FileEntityDTO implements Serializable {
@@ -11,6 +12,6 @@ public class FileEntityDTO implements Serializable {
     private final String name;
     private final String path;
     private final String suffix;
-    private final Long size;
+    private final BigInteger size;
     private final FileType fileType;
 }

@@ -5,6 +5,7 @@ import lombok.*;
 import org.hibernate.Hibernate;
 
 import javax.persistence.*;
+import java.math.BigInteger;
 import java.util.Objects;
 
 @Table(name = "file_entity")
@@ -21,7 +22,7 @@ public class FileEntity {
     private String name;
     private String path;
     private String suffix;
-    private Long size;
+    private BigInteger size;
 
     @Enumerated(EnumType.STRING)
     private FileType fileType;
@@ -30,7 +31,7 @@ public class FileEntity {
     @JoinColumn(name = "user_id")
     private UserEntity user;
 
-    public FileEntity(String name, String path, String suffix, Long size, FileType fileType, UserEntity user) {
+    public FileEntity(String name, String path, String suffix, BigInteger size, FileType fileType, UserEntity user) {
         this.name = name;
         this.path = path;
         this.suffix = suffix;

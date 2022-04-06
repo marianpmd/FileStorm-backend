@@ -1,5 +1,6 @@
 package com.marian.owncloudbackend.exceptions.advice;
 
+import com.marian.owncloudbackend.exceptions.FileEntityNotFoundException;
 import com.marian.owncloudbackend.exceptions.UserAlreadyExistsException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,17 @@ public class ControllerAdvice {
         body.put("message", "User already exists");
 
         return new ResponseEntity<>(body, HttpStatus.EXPECTATION_FAILED);
+    }
+
+    @ExceptionHandler(FileEntityNotFoundException.class)
+    public ResponseEntity<Object> handleFileNotFoundInDB(
+            RuntimeException ex, WebRequest request) {
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("message", ex.getMessage());
+
+        return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
     }
 
 }
