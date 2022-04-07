@@ -75,26 +75,21 @@ public class FileStoreService {
 
     public FileEntityDTO uploadNewFile(MultipartFile file) throws IOException {
         BigInteger size = BigInteger.valueOf(file.getBytes().length);
-        String[] nameSuffix = file.getOriginalFilename().split("\\.");
-        String fileName = nameSuffix[0];
-        String suffix = "";
-        if (!StringUtils.isEmpty(nameSuffix[1])) {
-            suffix = nameSuffix[1];
-        }
+        String fileName = file.getOriginalFilename();
 
         String userEmail = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
         UserEntity userByEmail = this.userService.getUserByEmail(userEmail);
         if (userByEmail == null) {
-            return null;
+            return null; //todo handle accordingly
         }
 
         String baseDir = FileStoreUtils.getBaseDir();
         Path finalPath = Paths.get(baseDir, userByEmail.getEmail(), file.getOriginalFilename());
         File fileToSave = finalPath.toFile();
 
-        FileEntity fileEntity = new FileEntity(fileName, finalPath.toString(), suffix, size, FileType.FILE, userByEmail);
+        FileEntity fileEntity = new FileEntity(fileName, finalPath.toString(), size, FileType.FILE, userByEmail);//todo handle file type by suffix
 
-        if (fileToSave.exists()) {
+        if (fileToSave.exists()) { //todo this does not work
             File existingFile = FileUtils.getFile(finalPath.toFile());
             FileUtils.copyFile(fileToSave, existingFile, StandardCopyOption.REPLACE_EXISTING);
         }

@@ -30,7 +30,7 @@ public class FileController {
     private final FileStoreService fileStoreService;
     private final UserService userService;
 
-    @PostMapping("/upload")
+    @PostMapping("/upload") //todo change to handle large files through streams
     public ResponseEntity<FileEntityDTO> uploadFile(final MultipartFile file) throws IOException {
         log.info("New file to be uploaded : {}", file);
 

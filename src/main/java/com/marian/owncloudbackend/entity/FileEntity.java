@@ -21,7 +21,6 @@ public class FileEntity {
     private Long id;
     private String name;
     private String path;
-    private String suffix;
     private BigInteger size;
 
     @Enumerated(EnumType.STRING)
@@ -31,10 +30,9 @@ public class FileEntity {
     @JoinColumn(name = "user_id")
     private UserEntity user;
 
-    public FileEntity(String name, String path, String suffix, BigInteger size, FileType fileType, UserEntity user) {
+    public FileEntity(String name, String path, BigInteger size, FileType fileType, UserEntity user) {
         this.name = name;
         this.path = path;
-        this.suffix = suffix;
         this.size = size;
         this.fileType = fileType;
         this.user = user;

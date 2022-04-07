@@ -32,7 +32,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     @SuppressWarnings(value = "deprecation")
-    public PasswordEncoder bCryptPasswordEncoder(){
+    public PasswordEncoder bCryptPasswordEncoder() {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();//use this if you can
         NoOpPasswordEncoder encoder1 = (NoOpPasswordEncoder) NoOpPasswordEncoder.getInstance();
         System.out.println(encoder.encode("password"));
@@ -61,9 +61,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http
                 .csrf().disable()
                 .authorizeRequests()
-                .antMatchers("/login","/user/register")
+                .antMatchers("/login", "/user/register")
                 .permitAll()
-                .antMatchers(HttpMethod.OPTIONS,"/**")
+                .antMatchers(HttpMethod.OPTIONS, "/**")
                 .permitAll()
                 .anyRequest()
                 .authenticated()
@@ -77,7 +77,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     @Override
-    public AuthenticationManager authenticationManagerBean() throws Exception{
+    public AuthenticationManager authenticationManagerBean() throws Exception {
         return super.authenticationManagerBean();
     }
 }

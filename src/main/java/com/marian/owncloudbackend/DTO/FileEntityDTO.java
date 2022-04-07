@@ -11,7 +11,6 @@ public class FileEntityDTO implements Serializable {
     private final Long id;
     private final String name;
     private final String path;
-    private final String suffix;
     private final BigInteger size;
     private final FileType fileType;
 }
