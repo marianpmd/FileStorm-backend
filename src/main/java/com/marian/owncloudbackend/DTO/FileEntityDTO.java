@@ -1,5 +1,6 @@
 package com.marian.owncloudbackend.DTO;
 
+import com.marian.owncloudbackend.entity.FileEntity;
 import com.marian.owncloudbackend.enums.FileType;
 import lombok.Data;
 
@@ -13,4 +14,12 @@ public class FileEntityDTO implements Serializable {
     private final String path;
     private final BigInteger size;
     private final FileType fileType;
+
+    public static FileEntityDTO fromEntity(FileEntity entity) {
+        return new FileEntityDTO(entity.getId(),
+                entity.getName(),
+                entity.getPath(),
+                entity.getSize(),
+                entity.getFileType());
+    }
 }

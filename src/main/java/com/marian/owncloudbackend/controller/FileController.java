@@ -7,6 +7,7 @@ import com.marian.owncloudbackend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +20,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.List;
 
 @RestController
 @RequestMapping("/file")
@@ -31,19 +31,31 @@ public class FileController {
     private final UserService userService;
 
     @PostMapping("/upload") //todo change to handle large files through streams
-    public ResponseEntity<FileEntityDTO> uploadFile(final MultipartFile file) throws IOException {
+    public ResponseEntity<FileEntityDTO> uploadFile(final MultipartFile file,
+                                                    @RequestParam(required = false) final Boolean shouldUpdate) throws IOException {
         log.info("New file to be uploaded : {}", file);
 
-        FileEntityDTO fileEntityDTO = fileStoreService.uploadNewFile(file);
+        FileEntityDTO fileEntityDTO = fileStoreService.uploadNewFile(file, shouldUpdate);
 
         return ResponseEntity.ok(fileEntityDTO);
     }
 
+    @GetMapping("/check")
+    public ResponseEntity<Boolean> checkFile(String filename) {
+        boolean fileExists = fileStoreService.checkIfExists(filename);
+        if (fileExists) {
+            return ResponseEntity.ok().body(true);
+        }
+
+        return ResponseEntity.ok().body(false);
+
+    }
+
     @GetMapping("/all")
-    public ResponseEntity<List<FileEntityDTO>> getAllFilesForUser() {
+    public ResponseEntity<Page<FileEntityDTO>> getAllFilesForUser(String sortBy, int page, boolean asc) {
         var userEmail = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        List<FileEntityDTO> allFilesForUser = fileStoreService.getAllFilesForUser(userEmail);
+        Page<FileEntityDTO> allFilesForUser = fileStoreService.getAllFilesForUser(userEmail, sortBy, page,asc);
 
         return ResponseEntity.ok(allFilesForUser);
 

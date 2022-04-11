@@ -5,6 +5,7 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.marian.owncloudbackend.exceptions.LoginErrorException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -57,13 +58,7 @@ public class CustomAuthorisationFilter extends OncePerRequestFilter {
                     filterChain.doFilter(request,response);
                 } catch (Exception exception) {
                     log.error("Error logging in: {}",exception.getMessage());
-                    response.setHeader("error",exception.getMessage());
-                    exception.printStackTrace();
-                    response.setStatus(FORBIDDEN.value());
-                    Map<String,String> error = new HashMap<>();
-                    error.put("errorMessage",exception.getMessage());
-                    response.setContentType(APPLICATION_JSON_VALUE);
-                    new ObjectMapper().writeValue(response.getOutputStream(),error);
+                    throw new LoginErrorException("Login has failed");
                 }
 
             }else {

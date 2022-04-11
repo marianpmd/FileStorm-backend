@@ -6,6 +6,7 @@ import org.hibernate.Hibernate;
 
 import javax.persistence.*;
 import java.math.BigInteger;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Table(name = "file_entity")
@@ -22,6 +23,7 @@ public class FileEntity {
     private String name;
     private String path;
     private BigInteger size;
+    private LocalDateTime lastModified;
 
     @Enumerated(EnumType.STRING)
     private FileType fileType;
@@ -30,9 +32,10 @@ public class FileEntity {
     @JoinColumn(name = "user_id")
     private UserEntity user;
 
-    public FileEntity(String name, String path, BigInteger size, FileType fileType, UserEntity user) {
+    public FileEntity(String name, String path, BigInteger size,LocalDateTime lastModified, FileType fileType, UserEntity user) {
         this.name = name;
         this.path = path;
+        this.lastModified = lastModified;
         this.size = size;
         this.fileType = fileType;
         this.user = user;

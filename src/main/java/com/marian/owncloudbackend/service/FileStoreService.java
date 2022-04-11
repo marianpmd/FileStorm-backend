@@ -10,9 +10,12 @@ import com.marian.owncloudbackend.exceptions.FileEntityNotFoundException;
 import com.marian.owncloudbackend.mapper.FileEntityMapper;
 import com.marian.owncloudbackend.repository.FileEntityRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,11 +26,12 @@ import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class FileStoreService {
 
     private final FileEntityRepository fileEntityRepository;
@@ -73,8 +77,8 @@ public class FileStoreService {
         return byIdAndUser;
     }
 
-    public FileEntityDTO uploadNewFile(MultipartFile file) throws IOException {
-        BigInteger size = BigInteger.valueOf(file.getBytes().length);
+    public FileEntityDTO uploadNewFile(MultipartFile file, Boolean shouldUpdate) throws IOException {
+        BigInteger size = BigInteger.valueOf(file.getSize());
         String fileName = file.getOriginalFilename();
 
         String userEmail = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
@@ -87,18 +91,22 @@ public class FileStoreService {
         Path finalPath = Paths.get(baseDir, userByEmail.getEmail(), file.getOriginalFilename());
         File fileToSave = finalPath.toFile();
 
-        FileEntity fileEntity = new FileEntity(fileName, finalPath.toString(), size, FileType.FILE, userByEmail);//todo handle file type by suffix
+        FileEntity fileEntity = new FileEntity(fileName, finalPath.toString(), size, LocalDateTime.now(), FileType.FILE, userByEmail);//todo handle file type by suffix
 
-        if (fileToSave.exists()) { //todo this does not work
-            File existingFile = FileUtils.getFile(finalPath.toFile());
-            FileUtils.copyFile(fileToSave, existingFile, StandardCopyOption.REPLACE_EXISTING);
+        FileEntity saved = null;
+        if (fileToSave.exists() && shouldUpdate.equals(Boolean.TRUE)) {
+            log.info("File aready exists so replace on FS and update on DB");
+            if (fileToSave.delete()) {
+                IOUtils.copyLarge(file.getInputStream(), Files.newOutputStream(fileToSave.toPath()));
+                FileEntity existingFileEntity = fileEntityRepository.findByName(fileName)
+                        .orElseThrow(() -> new FileEntityNotFoundException("File was supposed to exist in the DB, SYNC ERROR."));
+                existingFileEntity.setLastModified(LocalDateTime.now());
+                saved = fileEntityRepository.save(existingFileEntity);
+            }
+        } else {
+            IOUtils.copyLarge(file.getInputStream(), Files.newOutputStream(fileToSave.toPath()));
+            saved = fileEntityRepository.save(fileEntity);
         }
-
-
-        IOUtils.copyLarge(file.getInputStream(),Files.newOutputStream(fileToSave.toPath()));
-
-
-        FileEntity saved = fileEntityRepository.save(fileEntity);
         return fileEntityMapper.fileEntityToFileEntityDTO(saved);
     }
 
@@ -109,12 +117,19 @@ public class FileStoreService {
         return file.mkdir();
     }
 
-    public List<FileEntityDTO> getAllFilesForUser(String userEmail) {
+    public Page<FileEntityDTO> getAllFilesForUser(String userEmail, String sortBy, int page, boolean asc) {
         UserEntity userByEmail = userService.getUserByEmail(userEmail);
 
-        List<FileEntity> byUser = fileEntityRepository.findByUser(userByEmail);
+        PageRequest pageable;
 
-        return fileEntityMapper.entitiesToDTOs(byUser);
+        if (asc){
+            pageable = PageRequest.of(page, 10, Sort.by(sortBy).ascending());
+        }else {
+            pageable = PageRequest.of(page, 10, Sort.by(sortBy).descending());
+        }
+        Page<FileEntity> byUser = fileEntityRepository.findByUser(userByEmail,pageable);
+
+        return byUser.map(FileEntityDTO::fromEntity);
     }
 
     public boolean deleteFileByIdAndUser(Long id, UserEntity user) {
@@ -133,6 +148,20 @@ public class FileStoreService {
             e.printStackTrace();
         }
 
+        return false;
+    }
+
+    public boolean checkIfExists(String filename) {
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
+        UserEntity userByEmail = this.userService.getUserByEmail(userEmail);
+        String baseDir = FileStoreUtils.getBaseDir();
+        Path finalPath = Paths.get(baseDir, userByEmail.getEmail(), filename);
+        File fileToSave = finalPath.toFile();
+
+        if (fileToSave.exists()) {
+            log.warn("File {} already exists for user {}", fileToSave, userEmail);
+            return true;
+        }
         return false;
     }
 }
