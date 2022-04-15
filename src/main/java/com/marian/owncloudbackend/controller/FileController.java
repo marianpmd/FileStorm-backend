@@ -30,7 +30,7 @@ public class FileController {
     private final FileStoreService fileStoreService;
     private final UserService userService;
 
-    @PostMapping("/upload") //todo change to handle large files through streams
+    @PostMapping("/upload")
     public ResponseEntity<FileEntityDTO> uploadFile(final MultipartFile file,
                                                     @RequestParam(required = false) final Boolean shouldUpdate) throws IOException {
         log.info("New file to be uploaded : {}", file);
@@ -52,10 +52,10 @@ public class FileController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<Page<FileEntityDTO>> getAllFilesForUser(String sortBy, int page, boolean asc) {
+    public ResponseEntity<Page<FileEntityDTO>> getAllFilesForUser(String sortBy, int page, int size, boolean asc) {
         var userEmail = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        Page<FileEntityDTO> allFilesForUser = fileStoreService.getAllFilesForUser(userEmail, sortBy, page,asc);
+        Page<FileEntityDTO> allFilesForUser = fileStoreService.getAllFilesForUser(userEmail, sortBy, page, size, asc);
 
         return ResponseEntity.ok(allFilesForUser);
 

@@ -27,7 +27,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -81,6 +80,9 @@ public class FileStoreService {
         BigInteger size = BigInteger.valueOf(file.getSize());
         String fileName = file.getOriginalFilename();
 
+        String contentType = file.getContentType();
+        FileType filetype = FileStoreUtils.getFileTypeFromContentType(contentType);
+
         String userEmail = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
         UserEntity userByEmail = this.userService.getUserByEmail(userEmail);
         if (userByEmail == null) {
@@ -91,7 +93,7 @@ public class FileStoreService {
         Path finalPath = Paths.get(baseDir, userByEmail.getEmail(), file.getOriginalFilename());
         File fileToSave = finalPath.toFile();
 
-        FileEntity fileEntity = new FileEntity(fileName, finalPath.toString(), size, LocalDateTime.now(), FileType.FILE, userByEmail);//todo handle file type by suffix
+        FileEntity fileEntity = new FileEntity(fileName, finalPath.toString(), size, LocalDateTime.now(), filetype, userByEmail);//todo handle file type by suffix
 
         FileEntity saved = null;
         if (fileToSave.exists() && shouldUpdate.equals(Boolean.TRUE)) {
@@ -117,17 +119,17 @@ public class FileStoreService {
         return file.mkdir();
     }
 
-    public Page<FileEntityDTO> getAllFilesForUser(String userEmail, String sortBy, int page, boolean asc) {
+    public Page<FileEntityDTO> getAllFilesForUser(String userEmail, String sortBy, int page, int size, boolean asc) {
         UserEntity userByEmail = userService.getUserByEmail(userEmail);
 
         PageRequest pageable;
 
-        if (asc){
-            pageable = PageRequest.of(page, 10, Sort.by(sortBy).ascending());
-        }else {
-            pageable = PageRequest.of(page, 10, Sort.by(sortBy).descending());
+        if (asc) {
+            pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
+        } else {
+            pageable = PageRequest.of(page, size, Sort.by(sortBy).descending());
         }
-        Page<FileEntity> byUser = fileEntityRepository.findByUser(userByEmail,pageable);
+        Page<FileEntity> byUser = fileEntityRepository.findByUser(userByEmail, pageable);
 
         return byUser.map(FileEntityDTO::fromEntity);
     }
