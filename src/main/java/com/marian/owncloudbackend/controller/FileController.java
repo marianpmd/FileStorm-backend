@@ -33,7 +33,7 @@ public class FileController {
     @PostMapping("/upload")
     public ResponseEntity<FileEntityDTO> uploadFile(final MultipartFile file,
                                                     @RequestParam(required = false) final Boolean shouldUpdate) throws IOException {
-        log.info("New file to be uploaded : {}", file);
+        log.info("New file to be uploaded : {}", file.getOriginalFilename());
 
         FileEntityDTO fileEntityDTO = fileStoreService.uploadNewFile(file, shouldUpdate);
 
