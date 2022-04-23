@@ -2,12 +2,15 @@ package com.marian.owncloudbackend.controller;
 
 import com.marian.owncloudbackend.DTO.UserAuthDTO;
 import com.marian.owncloudbackend.DTO.UserDTO;
+import com.marian.owncloudbackend.entity.UserEntity;
 import com.marian.owncloudbackend.service.FileStoreService;
 import com.marian.owncloudbackend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.File;
 import java.util.List;
 
 @RestController
