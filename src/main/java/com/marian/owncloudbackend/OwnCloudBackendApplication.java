@@ -30,7 +30,7 @@ public class OwnCloudBackendApplication {
 
         final CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(List.of("http://localhost:4200","https://mariancr.go.ro"));
+        config.setAllowedOrigins(List.of("http://localhost:4200","https://mariancr.go.ro","http://192.168.1.106"));
         config.setAllowedHeaders(Arrays.asList("Access-Control-Allow-Origin","Origin","ngsw-bypass", "Content-Type", "Accept","Authorization"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 

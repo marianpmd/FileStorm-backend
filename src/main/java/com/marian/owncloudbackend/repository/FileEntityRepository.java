@@ -17,7 +17,5 @@ public interface FileEntityRepository extends JpaRepository<FileEntity, Long> {
 
     Optional<FileEntity> findByName(String name);
 
-
-
-
+    List<FileEntity> findByUserAndNameContaining(UserEntity user, String name);
 }

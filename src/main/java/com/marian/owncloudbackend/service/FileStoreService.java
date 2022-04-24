@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -165,5 +166,13 @@ public class FileStoreService {
             return true;
         }
         return false;
+    }
+
+    public List<FileEntityDTO> getAllFilesLike(String keyword) {
+        String userEmail = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        UserEntity userByEmail = userService.getUserByEmail(userEmail);
+        List<FileEntity> byUserAndNameContaining = fileEntityRepository.findByUserAndNameContaining(userByEmail, keyword);
+
+        return fileEntityMapper.entitiesToDTOs(byUserAndNameContaining);
     }
 }
