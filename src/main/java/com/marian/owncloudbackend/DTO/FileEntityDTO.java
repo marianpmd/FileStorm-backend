@@ -7,13 +7,10 @@ import lombok.Data;
 import java.io.Serializable;
 import java.math.BigInteger;
 
-@Data
-public class FileEntityDTO implements Serializable {
-    private final Long id;
-    private final String name;
-    private final String path;
-    private final BigInteger size;
-    private final FileType fileType;
+
+public record FileEntityDTO(Long id, String name, String path, BigInteger size,
+                            FileType fileType) implements Serializable {
+
 
     public static FileEntityDTO fromEntity(FileEntity entity) {
         return new FileEntityDTO(entity.getId(),

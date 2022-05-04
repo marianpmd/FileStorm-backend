@@ -9,6 +9,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -64,6 +66,14 @@ public class FileStoreUtils {
         }
 
         return FileType.FILE;
+    }
+
+
+    public static Path computePathFromRoot(String email, List<String> pathsFromRoot) {
+        List<String> fullPath = new LinkedList<>();
+        fullPath.add(email);
+        fullPath.addAll(pathsFromRoot);
+        return Path.of(FileStoreUtils.getBaseDir(),fullPath.toArray(new String[0]));
     }
 
 }

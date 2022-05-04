@@ -32,6 +32,10 @@ public class FileEntity {
     @JoinColumn(name = "user_id")
     private UserEntity user;
 
+    @ManyToOne
+    @JoinColumn(name = "directory_id")
+    private DirectoryEntity directory;
+
     public FileEntity(String name, String path, BigInteger size,LocalDateTime lastModified, FileType fileType, UserEntity user) {
         this.name = name;
         this.path = path;

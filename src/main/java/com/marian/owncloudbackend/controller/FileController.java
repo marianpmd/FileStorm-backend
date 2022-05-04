@@ -41,10 +41,11 @@ public class FileController {
 
     @PostMapping("/upload")
     public ResponseEntity<FileEntityDTO> uploadFile(final MultipartFile file,
+                                                    @RequestParam final List<String> pathFromRoot,
                                                     @RequestParam(required = false) final Boolean shouldUpdate) throws IOException {
         log.info("New file to be uploaded : {}", file.getOriginalFilename());
 
-        FileEntityDTO fileEntityDTO = fileStoreService.uploadNewFile(file, shouldUpdate);
+        FileEntityDTO fileEntityDTO = fileStoreService.uploadNewFile(file,pathFromRoot, shouldUpdate);
 
         return ResponseEntity.ok(fileEntityDTO);
     }

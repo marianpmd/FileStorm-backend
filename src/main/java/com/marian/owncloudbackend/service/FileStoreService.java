@@ -5,6 +5,7 @@ import com.marian.owncloudbackend.DTO.UserDTO;
 import com.marian.owncloudbackend.entity.FileEntity;
 import com.marian.owncloudbackend.entity.UserEntity;
 import com.marian.owncloudbackend.enums.FileType;
+import com.marian.owncloudbackend.exceptions.DirectoryNotFoundException;
 import com.marian.owncloudbackend.exceptions.FileDoesNotExistException;
 import com.marian.owncloudbackend.exceptions.FileEntityNotFoundException;
 import com.marian.owncloudbackend.mapper.FileEntityMapper;
@@ -77,7 +78,7 @@ public class FileStoreService {
         return byIdAndUser;
     }
 
-    public FileEntityDTO uploadNewFile(MultipartFile file, Boolean shouldUpdate) throws IOException {
+    public FileEntityDTO uploadNewFile(MultipartFile file, List<String> pathFromRoot, Boolean shouldUpdate) throws IOException {
         BigInteger size = BigInteger.valueOf(file.getSize());
         String fileName = file.getOriginalFilename();
 
@@ -90,12 +91,16 @@ public class FileStoreService {
             return null; //todo handle accordingly
         }
 
-        String baseDir = FileStoreUtils.getBaseDir();
-        Path finalPath = Paths.get(baseDir, userByEmail.getEmail(), file.getOriginalFilename());
+        String pathToDir = FileStoreUtils.computePathFromRoot(userByEmail.getEmail(), pathFromRoot).toString();
+        boolean isDir = FileUtils.isDirectory(new File(pathToDir));
+        if (!isDir){
+            throw new DirectoryNotFoundException("Directory not found!");
+        }
+        //todo continue with saving to correct DIR PATH
+        Path finalPath = Paths.get(pathToDir, file.getOriginalFilename());
         File fileToSave = finalPath.toFile();
 
-        FileEntity fileEntity = new FileEntity(fileName, finalPath.toString(), size, LocalDateTime.now(), filetype, userByEmail);//todo handle file type by suffix
-
+        FileEntity fileEntity = new FileEntity(fileName, finalPath.toString(), size, LocalDateTime.now(), filetype, userByEmail);
         FileEntity saved = null;
         if (fileToSave.exists() && shouldUpdate.equals(Boolean.TRUE)) {
             log.info("File aready exists so replace on FS and update on DB");
