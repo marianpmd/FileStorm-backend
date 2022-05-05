@@ -3,6 +3,7 @@ package com.marian.owncloudbackend.controller;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
@@ -41,7 +42,7 @@ public class FileController {
 
     @PostMapping("/upload")
     public ResponseEntity<FileEntityDTO> uploadFile(final MultipartFile file,
-                                                    @RequestParam final List<String> pathFromRoot,
+                                                    final ArrayList<String> pathFromRoot,
                                                     @RequestParam(required = false) final Boolean shouldUpdate) throws IOException {
         log.info("New file to be uploaded : {}", file.getOriginalFilename());
 
