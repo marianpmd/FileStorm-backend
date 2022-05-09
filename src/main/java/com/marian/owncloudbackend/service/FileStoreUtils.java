@@ -17,7 +17,7 @@ import java.util.Map;
 @Slf4j
 public class FileStoreUtils {
 
-    private static final String DEFAULT_DIR_NAME = "OwnCloud";
+    public static final String DEFAULT_DIR_NAME = "OwnCloud";
     private static final Map<FileType, List<String>> fileTypeMap = Map.of(
             FileType.IMAGE, List.of("image"),
             FileType.VIDEO, List.of("video"),

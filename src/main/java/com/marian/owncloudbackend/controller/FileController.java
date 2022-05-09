@@ -3,15 +3,18 @@ package com.marian.owncloudbackend.controller;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.IOUtils;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -42,18 +45,18 @@ public class FileController {
 
     @PostMapping("/upload")
     public ResponseEntity<FileEntityDTO> uploadFile(final MultipartFile file,
-                                                    final ArrayList<String> pathFromRoot,
-                                                    @RequestParam(required = false) final Boolean shouldUpdate) throws IOException {
+                                                    @RequestParam final ArrayList<String> pathFromRoot,
+                                                    @RequestParam(required = false) final boolean shouldUpdate) throws IOException {
         log.info("New file to be uploaded : {}", file.getOriginalFilename());
 
-        FileEntityDTO fileEntityDTO = fileStoreService.uploadNewFile(file,pathFromRoot, shouldUpdate);
+        FileEntityDTO fileEntityDTO = fileStoreService.uploadNewFile(file, pathFromRoot, shouldUpdate);
 
         return ResponseEntity.ok(fileEntityDTO);
     }
 
     @GetMapping("/check")
-    public ResponseEntity<Boolean> checkFile(String filename) {
-        boolean fileExists = fileStoreService.checkIfExists(filename);
+    public ResponseEntity<Boolean> checkFile(@RequestParam ArrayList<String> pathFromRoot, @RequestParam String filename) {
+        boolean fileExists = fileStoreService.checkIfExists(filename, pathFromRoot);
         if (fileExists) {
             return ResponseEntity.ok().body(true);
         }
@@ -63,10 +66,14 @@ public class FileController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<Page<FileEntityDTO>> getAllFilesForUser(String sortBy, int page, int size, boolean asc) {
+    public ResponseEntity<Page<FileEntityDTO>> getAllFilesForUser(String sortBy,
+                                                                  int page,
+                                                                  int size,
+                                                                  boolean asc,
+                                                                  @RequestParam ArrayList<String> pathFromRoot) {
         var userEmail = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        Page<FileEntityDTO> allFilesForUser = fileStoreService.getAllFilesForUser(userEmail, sortBy, page, size, asc);
+        Page<FileEntityDTO> allFilesForUser = fileStoreService.getAllFilesForUser(userEmail, sortBy, page, size, asc, pathFromRoot);
 
         return ResponseEntity.ok(allFilesForUser);
 
@@ -78,14 +85,36 @@ public class FileController {
         UserEntity userByEmail = userService.getUserByEmail(userEmail);
         File file = fileStoreService.getFileByIdAndUser(id, userByEmail);
         String fileName = file.getName();
+
         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName);
         response.setHeader(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION);
+
         return outputStream -> {
             FileInputStream inputStream = new FileInputStream(file);
             IOUtils.copyLarge(inputStream, response.getOutputStream());
             inputStream.close();
         };
     }
+
+//    @GetMapping("/one")
+//    public ResponseEntity<ByteArrayResource> getFileFromUserAndId(@RequestParam Long id, HttpServletResponse response) throws IOException {
+//        String userEmail = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+//        UserEntity userByEmail = userService.getUserByEmail(userEmail);
+//        File file = fileStoreService.getFileByIdAndUser(id, userByEmail);
+//        String fileName = file.getName();
+//
+//        var headers = new HttpHeaders();
+//        headers.add(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=" + fileName);
+//        headers.add(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS,HttpHeaders.CONTENT_DISPOSITION);
+//
+//
+//        ByteArrayResource resource = new ByteArrayResource(Files.readAllBytes(file.toPath()));
+//        return ResponseEntity.ok()
+//                .headers(headers)
+//                .contentLength(file.length())
+//                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+//                .body(resource);
+//    }
 
     @DeleteMapping("/delete/one")
     public ResponseEntity<String> deleteFileFromUserAndId(@RequestParam Long id) {

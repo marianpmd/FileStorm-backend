@@ -1,7 +1,7 @@
 package com.marian.owncloudbackend.service;
 
 import com.marian.owncloudbackend.DTO.FileEntityDTO;
-import com.marian.owncloudbackend.DTO.UserDTO;
+import com.marian.owncloudbackend.entity.DirectoryEntity;
 import com.marian.owncloudbackend.entity.FileEntity;
 import com.marian.owncloudbackend.entity.UserEntity;
 import com.marian.owncloudbackend.enums.FileType;
@@ -19,6 +19,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -28,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -38,6 +40,7 @@ public class FileStoreService {
     private final FileEntityRepository fileEntityRepository;
     private final FileEntityMapper fileEntityMapper;
     private final UserService userService;
+    private final DirectoryService directoryService;
 
     public File getFileByIdAndUser(Long id, UserEntity user) {
         FileEntity byIdAndUser = fileEntityRepository.findByIdAndUser(id, user)
@@ -78,7 +81,7 @@ public class FileStoreService {
         return byIdAndUser;
     }
 
-    public FileEntityDTO uploadNewFile(MultipartFile file, List<String> pathFromRoot, Boolean shouldUpdate) throws IOException {
+    public FileEntityDTO uploadNewFile(MultipartFile file, ArrayList<String> pathFromRoot, Boolean shouldUpdate) throws IOException {
         BigInteger size = BigInteger.valueOf(file.getSize());
         String fileName = file.getOriginalFilename();
 
@@ -96,11 +99,16 @@ public class FileStoreService {
         if (!isDir){
             throw new DirectoryNotFoundException("Directory not found!");
         }
-        //todo continue with saving to correct DIR PATH
         Path finalPath = Paths.get(pathToDir, file.getOriginalFilename());
         File fileToSave = finalPath.toFile();
 
         FileEntity fileEntity = new FileEntity(fileName, finalPath.toString(), size, LocalDateTime.now(), filetype, userByEmail);
+
+        DirectoryEntity directoryEntity = directoryService.getDirectoryEntityFromNameAndUser(userByEmail, pathFromRoot)
+                .orElseThrow(()->new DirectoryNotFoundException("Directory was not found for user : " + userEmail
+                + "and path : " + pathFromRoot));
+
+        fileEntity.setDirectory(directoryEntity);
         FileEntity saved = null;
         if (fileToSave.exists() && shouldUpdate.equals(Boolean.TRUE)) {
             log.info("File aready exists so replace on FS and update on DB");
@@ -118,14 +126,15 @@ public class FileStoreService {
         return fileEntityMapper.fileEntityToFileEntityDTO(saved);
     }
 
-    public boolean createUserDirectory(UserDTO userDTO) {
+    public boolean createUserDirectory(UserEntity userEntity) {
         String baseDir = FileStoreUtils.getBaseDir();
-        Path userPath = Paths.get(baseDir, userDTO.email());
+        Path userPath = Paths.get(baseDir, userEntity.getEmail());
+        directoryService.createInitialDirectoryEntity(userPath,userEntity);
         File file = userPath.toFile();
         return file.mkdir();
     }
 
-    public Page<FileEntityDTO> getAllFilesForUser(String userEmail, String sortBy, int page, int size, boolean asc) {
+    public Page<FileEntityDTO> getAllFilesForUser(String userEmail, String sortBy, int page, int size, boolean asc, ArrayList<String> pathFromRoot) {
         UserEntity userByEmail = userService.getUserByEmail(userEmail);
 
         PageRequest pageable;
@@ -135,7 +144,11 @@ public class FileStoreService {
         } else {
             pageable = PageRequest.of(page, size, Sort.by(sortBy).descending());
         }
-        Page<FileEntity> byUser = fileEntityRepository.findByUser(userByEmail, pageable);
+
+        DirectoryEntity directoryEntity = directoryService.getDirectoryEntityFromNameAndUser(userByEmail, pathFromRoot)
+                .orElseThrow(); //todo handle
+                                //todo there is no root dir saved in the db
+        Page<FileEntity> byUser = fileEntityRepository.findByDirectoryAndUser(directoryEntity,userByEmail, pageable);
 
         return byUser.map(FileEntityDTO::fromEntity);
     }
@@ -159,12 +172,13 @@ public class FileStoreService {
         return false;
     }
 
-    public boolean checkIfExists(String filename) {
+    public boolean checkIfExists(String filename,ArrayList<String> pathFromRoot) {
         String userEmail = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
-        UserEntity userByEmail = this.userService.getUserByEmail(userEmail);
-        String baseDir = FileStoreUtils.getBaseDir();
-        Path finalPath = Paths.get(baseDir, userByEmail.getEmail(), filename);
-        File fileToSave = finalPath.toFile();
+
+        pathFromRoot.add(filename);
+        Path path = FileStoreUtils.computePathFromRoot(userEmail, pathFromRoot);
+
+        File fileToSave = path.toFile();
 
         if (fileToSave.exists()) {
             log.warn("File {} already exists for user {}", fileToSave, userEmail);

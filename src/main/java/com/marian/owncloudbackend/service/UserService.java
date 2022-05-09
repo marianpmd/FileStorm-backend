@@ -49,7 +49,7 @@ public class UserService implements UserDetailsService {
                 .orElseThrow();
     }
 
-    public UserDTO registerNewUser(String email, String password) {
+    public UserEntity registerNewUser(String email, String password) {
         Optional<UserEntity> byEmail = userRepository.findByEmail(email);
         if (byEmail.isPresent()){
             throw new IllegalStateException("User already exists");
@@ -57,7 +57,6 @@ public class UserService implements UserDetailsService {
 
         var newUser = new UserEntity(email, password, "todo");
 
-        UserEntity saved = this.userRepository.save(newUser);
-        return userMapper.entityToDTO(saved);
+        return this.userRepository.save(newUser);
     }
 }

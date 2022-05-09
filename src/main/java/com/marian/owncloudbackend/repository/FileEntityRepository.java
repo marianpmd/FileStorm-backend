@@ -1,5 +1,6 @@
 package com.marian.owncloudbackend.repository;
 
+import com.marian.owncloudbackend.entity.DirectoryEntity;
 import com.marian.owncloudbackend.entity.FileEntity;
 import com.marian.owncloudbackend.entity.UserEntity;
 import com.marian.owncloudbackend.enums.FileType;
@@ -15,6 +16,8 @@ import java.util.Optional;
 
 public interface FileEntityRepository extends JpaRepository<FileEntity, Long> {
     Page<FileEntity> findByUser(UserEntity user, Pageable pageable);
+
+    Page<FileEntity> findByDirectoryAndUser(DirectoryEntity directory, UserEntity user, Pageable pageable);
 
     Optional<FileEntity> findByIdAndUser(Long id, UserEntity user);
 

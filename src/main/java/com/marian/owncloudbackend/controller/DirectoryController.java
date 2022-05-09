@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.marian.owncloudbackend.DTO.DirectoriesWithParentDTO;
 import com.marian.owncloudbackend.DTO.DirectoryDTO;
 import com.marian.owncloudbackend.service.DirectoryService;
 
@@ -27,8 +28,8 @@ public class DirectoryController {
     }
 
     @PostMapping("/getAll")
-    public ResponseEntity<List<DirectoryDTO>> getAllDirectoriesInPath(@RequestBody ArrayList<String> pathsFromRoot){
-        List<DirectoryDTO> allDirectoriesInPath = directoryService.getAllDirectoriesInPath(pathsFromRoot);
+    public ResponseEntity<DirectoriesWithParentDTO> getAllDirectoriesInPath(@RequestBody ArrayList<String> pathsFromRoot){
+        DirectoriesWithParentDTO allDirectoriesInPath = directoryService.getAllDirectoriesInPath(pathsFromRoot);
         return ResponseEntity.ok(allDirectoriesInPath);
     }
 

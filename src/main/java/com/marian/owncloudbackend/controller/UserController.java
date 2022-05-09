@@ -28,9 +28,9 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<?> registerNewUser(@RequestBody UserAuthDTO user) {
-        UserDTO userDTO = userService.registerNewUser(user.email(), user.password());
-        boolean wasSuccessful = this.fileStoreService.createUserDirectory(userDTO); //todo return response accordingly
-        return ResponseEntity.ok(userDTO);
+        UserEntity userEntity = userService.registerNewUser(user.email(), user.password());
+        boolean wasSuccessful = this.fileStoreService.createUserDirectory(userEntity); //todo return response accordingly
+        return ResponseEntity.ok(user);
     }
 
 
