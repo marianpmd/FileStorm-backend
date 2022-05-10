@@ -7,6 +7,8 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.marian.owncloudbackend.exceptions.LoginErrorException;
 import lombok.extern.slf4j.Slf4j;
+
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -17,6 +19,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -37,10 +40,19 @@ public class CustomAuthorisationFilter extends OncePerRequestFilter {
                 request.getServletPath().equals("/user/register")) {
             filterChain.doFilter(request, response);
         } else {
-            String authorisationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-            if (authorisationHeader != null && authorisationHeader.startsWith("Bearer ")) {
+//            String authorisationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+            Cookie[] cookies = request.getCookies();
+            Cookie jwtCookie = null;
+            for (Cookie cookie : cookies) {
+                if (cookie.getName().equals("app-jwt")){
+                    jwtCookie = cookie;
+                    break;
+                }
+            }
+
+            if (jwtCookie != null && !StringUtils.isEmpty(jwtCookie.getValue())) {
                 try {
-                    String token = authorisationHeader.substring("Bearer ".length());
+                    String token = jwtCookie.getValue();
                     Algorithm algorithm = Algorithm.HMAC256(secret.getBytes());
 
                     JWTVerifier verifier = JWT.require(algorithm).build();

@@ -3,6 +3,7 @@ package com.marian.owncloudbackend.entity;
 import java.util.List;
 import java.util.Objects;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -37,7 +38,7 @@ public class DirectoryEntity {
     @ManyToOne
     private UserEntity user;
 
-    @OneToMany(mappedBy = "directory")
+    @OneToMany(mappedBy = "directory",cascade = CascadeType.REMOVE)
     @ToString.Exclude
     private List<FileEntity> files;
 

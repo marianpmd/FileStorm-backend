@@ -1,5 +1,6 @@
 package com.marian.owncloudbackend.service;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,6 +12,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -102,5 +104,17 @@ public class DirectoryService {
     public void createInitialDirectoryEntity(Path userPath, UserEntity userEntity) {
         DirectoryEntity root = new DirectoryEntity(userPath.toString(), "root", userEntity);
         directoryRepository.save(root);
+    }
+
+    public Object deleteDirById(Long id) throws IOException {
+        DirectoryEntity directoryEntity = directoryRepository.findById(id)
+                .orElseThrow(() -> new DirectoryNotFoundException("Dir not found for deletion"));
+        File directoryToDelete = Path.of(directoryEntity.getPath()).toFile();
+        FileUtils.deleteDirectory(directoryToDelete);
+
+        directoryRepository.delete(directoryEntity);
+
+
+        return null;
     }
 }
