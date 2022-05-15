@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.marian.owncloudbackend.exceptions.LoginErrorException;
 import lombok.extern.slf4j.Slf4j;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -40,9 +41,9 @@ public class CustomAuthorisationFilter extends OncePerRequestFilter {
                 request.getServletPath().equals("/user/register")) {
             filterChain.doFilter(request, response);
         } else {
-//            String authorisationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
             Cookie[] cookies = request.getCookies();
             Cookie jwtCookie = null;
+            if (!ArrayUtils.isEmpty(cookies))
             for (Cookie cookie : cookies) {
                 if (cookie.getName().equals("app-jwt")){
                     jwtCookie = cookie;

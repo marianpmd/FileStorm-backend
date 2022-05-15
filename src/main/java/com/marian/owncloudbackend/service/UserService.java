@@ -1,11 +1,11 @@
 package com.marian.owncloudbackend.service;
 
-import com.marian.owncloudbackend.DTO.UserDTO;
-import com.marian.owncloudbackend.entity.UserEntity;
-import com.marian.owncloudbackend.mapper.UserMapper;
-import com.marian.owncloudbackend.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,10 +13,15 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import com.marian.owncloudbackend.DTO.UserDTO;
+import com.marian.owncloudbackend.entity.UserEntity;
+import com.marian.owncloudbackend.exceptions.AbnormalAssignmentAmountException;
+import com.marian.owncloudbackend.mapper.UserMapper;
+import com.marian.owncloudbackend.repository.UserRepository;
+import com.marian.owncloudbackend.utils.FileStoreUtils;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +29,6 @@ import java.util.Optional;
 public class UserService implements UserDetailsService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
-
 
     public List<UserDTO> getAllUsers() {
         List<UserEntity> all = userRepository.findAll();
@@ -49,14 +53,62 @@ public class UserService implements UserDetailsService {
                 .orElseThrow();
     }
 
-    public UserEntity registerNewUser(String email, String password) {
+    public UserDTO getUserDTObyEmail(String userEmail) {
+        UserEntity userByEmail = getUserByEmail(userEmail);
+        return userMapper.entityToDTO(userByEmail);
+    }
+
+    public UserEntity registerNewUser(String email, String password, String role) {
         Optional<UserEntity> byEmail = userRepository.findByEmail(email);
-        if (byEmail.isPresent()){
+        if (byEmail.isPresent()) {
             throw new IllegalStateException("User already exists");
         }
 
-        var newUser = new UserEntity(email, password, "todo");
+        var newUser = new UserEntity(email, password, role);
 
         return this.userRepository.save(newUser);
+    }
+
+    public void updateUserSpace(UserEntity userByEmail, BigInteger size) {
+        BigInteger currentlyOccupied = userByEmail.getOccupiedSpace();
+        userByEmail.setOccupiedSpace(currentlyOccupied.add(size));
+        userRepository.save(userByEmail);
+    }
+
+    public UserEntity findById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("USER WITH ID" + userId + " NOT FOUND"));
+    }
+
+    public void deleteUser(UserEntity userEntity) {
+        userRepository.delete(userEntity);
+    }
+
+    public boolean existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
+    public long getTotalAssignedSpace() {
+        List<UserEntity> all = userRepository.findAll();
+        long total = 0L;
+        for (UserEntity userEntity : all) {
+            total+=userEntity.getAssignedSpace().longValueExact();
+        }
+
+        return total;
+    }
+
+    public UserDTO assignToUser(Long userId, String amount, Long usableSpace) {
+        long requestedAmount = FileStoreUtils.parseAmountString(amount);
+        if (requestedAmount > usableSpace)throw new AbnormalAssignmentAmountException("Not enough sys space to assign!");
+
+
+        UserEntity userEntity = userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User does not exist " + userId));
+
+        if (userEntity.getOccupiedSpace().longValueExact() > requestedAmount)throw new AbnormalAssignmentAmountException("User has already occupied more space!");
+        userEntity.setAssignedSpace(BigInteger.valueOf(requestedAmount));
+
+        return userMapper.entityToDTO(userRepository.save(userEntity));
     }
 }

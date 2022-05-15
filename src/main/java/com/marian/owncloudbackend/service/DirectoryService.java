@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -12,18 +13,20 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import com.marian.owncloudbackend.DTO.DirectoriesWithParentDTO;
 import com.marian.owncloudbackend.DTO.DirectoryDTO;
+import com.marian.owncloudbackend.DTO.UserDTO;
 import com.marian.owncloudbackend.entity.DirectoryEntity;
 import com.marian.owncloudbackend.entity.UserEntity;
 import com.marian.owncloudbackend.exceptions.DirectoryNotFoundException;
 import com.marian.owncloudbackend.mapper.DirectoryEntityMapper;
+import com.marian.owncloudbackend.mapper.UserMapper;
 import com.marian.owncloudbackend.repository.DirectoryRepository;
+import com.marian.owncloudbackend.utils.FileStoreUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -34,6 +37,7 @@ public class DirectoryService {
     private final DirectoryRepository directoryRepository;
     private final UserService userService;
     private final DirectoryEntityMapper directoryEntityMapper;
+    private final UserMapper userMapper;
 
     public DirectoryDTO createDirectory(List<String> pathsFromRoot) {
 
@@ -106,15 +110,31 @@ public class DirectoryService {
         directoryRepository.save(root);
     }
 
-    public Object deleteDirById(Long id) throws IOException {
+    public DirectoryDTO deleteDirById(Long id) throws IOException {
         DirectoryEntity directoryEntity = directoryRepository.findById(id)
                 .orElseThrow(() -> new DirectoryNotFoundException("Dir not found for deletion"));
         File directoryToDelete = Path.of(directoryEntity.getPath()).toFile();
         FileUtils.deleteDirectory(directoryToDelete);
+        DirectoryDTO directoryDTO = directoryEntityMapper.directoryEntityToDirectoryDTO(directoryEntity);
 
         directoryRepository.delete(directoryEntity);
 
+        return directoryDTO;
+    }
 
-        return null;
+    public UserDTO deleteUserById(Long userId) throws IOException {
+        UserEntity userEntity = userService.findById(userId);
+
+        List<DirectoryEntity> byUser = directoryRepository.findByUser(userEntity);
+        directoryRepository.deleteAll(byUser);
+
+        Path defaultPath = FileStoreUtils.computePathFromRoot(userEntity.getEmail(), Collections.emptyList());
+
+        FileUtils.forceDelete(defaultPath.toFile());
+
+        userService.deleteUser(userEntity);
+
+        UserDTO userDTO = userMapper.entityToDTO(userEntity);
+        return userDTO;
     }
 }

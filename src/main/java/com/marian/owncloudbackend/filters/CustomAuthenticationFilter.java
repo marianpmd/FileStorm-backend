@@ -69,22 +69,10 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
         Algorithm algorithm = Algorithm.HMAC256(secret.getBytes());
 
         String accessToken = createAccessToken(request, user, algorithm);
-
-        String refreshToken = createRefreshToken(request, user, algorithm);
-
-        Map<String,String> tokens = new HashMap<>();
-        tokens.put("app-jwt",accessToken);
         Cookie cookie = new Cookie("app-jwt", accessToken);
         response.addCookie(cookie);
     }
 
-    private String createRefreshToken(HttpServletRequest request, User user, Algorithm algorithm) {
-        return JWT.create()
-                .withSubject(user.getUsername())
-                .withExpiresAt(new Date(System.currentTimeMillis() + 3000 * 60 * 1000)) //3000mins
-                .withIssuer(request.getRequestURL().toString())
-                .sign(algorithm);
-    }
 
     private String createAccessToken(HttpServletRequest request, User user, Algorithm algorithm) {
         return JWT.create()

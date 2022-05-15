@@ -38,8 +38,8 @@ public class DirectoryController {
 
     @DeleteMapping("/delete")
     public ResponseEntity<?> deleteDirById(@RequestParam Long id) throws IOException {
-        directoryService.deleteDirById(id);
-        return ResponseEntity.ok(true);
+        DirectoryDTO directoryDTO = directoryService.deleteDirById(id);
+        return ResponseEntity.ok(directoryDTO);
     }
 
 }

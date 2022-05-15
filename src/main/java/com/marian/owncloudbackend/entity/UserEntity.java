@@ -4,6 +4,9 @@ import lombok.*;
 import org.hibernate.Hibernate;
 
 import javax.persistence.*;
+
+import java.math.BigInteger;
+import java.security.Principal;
 import java.util.List;
 import java.util.Objects;
 
@@ -12,7 +15,7 @@ import java.util.Objects;
 @Setter
 @ToString
 @RequiredArgsConstructor
-public class UserEntity {
+public class UserEntity implements Principal {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
@@ -23,10 +26,16 @@ public class UserEntity {
     private String username;
     private String password;
     private String role;
+    private BigInteger assignedSpace = BigInteger.ZERO;
+    private BigInteger occupiedSpace = BigInteger.ZERO;
 
     @OneToMany(mappedBy = "user")
     @ToString.Exclude
     List<FileEntity> files;
+
+    @OneToMany(mappedBy = "userEntity",cascade = CascadeType.REMOVE)
+    @ToString.Exclude
+    List<NotificationEntity> notifications;
 
     public UserEntity(String email, String password, String role) {
         this.password = password;
@@ -34,13 +43,6 @@ public class UserEntity {
         this.email = email;
         this.username = setUsername();
     }
-//
-//    public String getUsername() {
-//        String[] split = this.email.split("@");
-//        return split[0]
-//                .replace("\\/","")
-//                .replace("\\","");
-//    }
 
     public String setUsername() {
         String[] split = this.email.split("@");
@@ -60,5 +62,10 @@ public class UserEntity {
     @Override
     public int hashCode() {
         return 0;
+    }
+
+    @Override
+    public String getName() {
+        return getEmail();
     }
 }

@@ -1,6 +1,7 @@
 package com.marian.owncloudbackend.service;
 
 import com.marian.owncloudbackend.DTO.FileEntityDTO;
+import com.marian.owncloudbackend.DTO.SystemInfoDTO;
 import com.marian.owncloudbackend.entity.DirectoryEntity;
 import com.marian.owncloudbackend.entity.FileEntity;
 import com.marian.owncloudbackend.entity.UserEntity;
@@ -8,8 +9,11 @@ import com.marian.owncloudbackend.enums.FileType;
 import com.marian.owncloudbackend.exceptions.DirectoryNotFoundException;
 import com.marian.owncloudbackend.exceptions.FileDoesNotExistException;
 import com.marian.owncloudbackend.exceptions.FileEntityNotFoundException;
+import com.marian.owncloudbackend.exceptions.OutOfSpaceException;
 import com.marian.owncloudbackend.mapper.FileEntityMapper;
 import com.marian.owncloudbackend.repository.FileEntityRepository;
+import com.marian.owncloudbackend.utils.FileStoreUtils;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -19,7 +23,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -83,6 +86,7 @@ public class FileStoreService {
 
     public FileEntityDTO uploadNewFile(MultipartFile file, ArrayList<String> pathFromRoot, Boolean shouldUpdate) throws IOException {
         BigInteger size = BigInteger.valueOf(file.getSize());
+
         String fileName = file.getOriginalFilename();
 
         String contentType = file.getContentType();
@@ -90,8 +94,12 @@ public class FileStoreService {
 
         String userEmail = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
         UserEntity userByEmail = this.userService.getUserByEmail(userEmail);
-        if (userByEmail == null) {
-            return null; //todo handle accordingly
+
+        BigInteger assignedSpace = userByEmail.getAssignedSpace();
+        BigInteger occupiedSpace = userByEmail.getOccupiedSpace();
+
+        if (occupiedSpace.add(assignedSpace).compareTo(size) == -1){
+            throw new OutOfSpaceException("Not enough storage assigned to this user!");
         }
 
         String pathToDir = FileStoreUtils.computePathFromRoot(userByEmail.getEmail(), pathFromRoot).toString();
@@ -123,6 +131,9 @@ public class FileStoreService {
             IOUtils.copyLarge(file.getInputStream(), Files.newOutputStream(fileToSave.toPath()));
             saved = fileEntityRepository.save(fileEntity);
         }
+
+        userService.updateUserSpace(userByEmail,size);
+
         return fileEntityMapper.fileEntityToFileEntityDTO(saved);
     }
 
@@ -193,5 +204,23 @@ public class FileStoreService {
         List<FileEntity> byUserAndNameContaining = fileEntityRepository.findByUserAndNameContaining(userByEmail, keyword);
 
         return fileEntityMapper.entitiesToDTOs(byUserAndNameContaining);
+    }
+
+    public SystemInfoDTO getSystemInfo() {
+
+        File file = new File(FileStoreUtils.getBaseDir());
+
+        long totalSpace = file.getTotalSpace();
+        long usableSpace = file.getUsableSpace();
+        long totalAssignedSpace = userService.getTotalAssignedSpace();
+        usableSpace = usableSpace - totalAssignedSpace;
+
+        System.out.println(totalSpace);
+        System.out.println(usableSpace);
+
+        return SystemInfoDTO.builder()
+                .totalSpace(totalSpace)
+                .usableSpace(usableSpace)
+                .build();
     }
 }

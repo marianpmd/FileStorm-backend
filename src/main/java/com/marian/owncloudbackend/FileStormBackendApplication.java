@@ -1,6 +1,6 @@
 package com.marian.owncloudbackend;
 
-import com.marian.owncloudbackend.service.FileStoreUtils;
+import com.marian.owncloudbackend.utils.FileStoreUtils;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.boot.SpringApplication;
@@ -17,14 +17,12 @@ import java.util.List;
 @SpringBootApplication
 @RequiredArgsConstructor
 @EnableAsync
-public class OwnCloudBackendApplication {
+public class FileStormBackendApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(OwnCloudBackendApplication.class, args);
-
+        SpringApplication.run(FileStormBackendApplication.class, args);
         FileStoreUtils.makeBaseDir();
     }
-
 
     @Bean
     public CorsFilter corsFilter() {
@@ -32,7 +30,7 @@ public class OwnCloudBackendApplication {
 
         final CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(List.of("http://localhost:4200","https://mariancr.go.ro","http://192.168.1.106"));
+        config.setAllowedOrigins(List.of("http://localhost:4200","https://mariancr.go.ro","http://192.168.1.108"));
         config.setAllowedHeaders(Arrays.asList("Access-Control-Allow-Origin","Origin","ngsw-bypass", "Content-Type", "Accept","Authorization"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 

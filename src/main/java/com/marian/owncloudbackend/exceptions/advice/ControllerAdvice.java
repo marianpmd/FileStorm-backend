@@ -10,10 +10,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
+import com.marian.owncloudbackend.exceptions.AbnormalAssignmentAmountException;
 import com.marian.owncloudbackend.exceptions.DirectoryNotFoundException;
 import com.marian.owncloudbackend.exceptions.FileAlreadyOnFSException;
 import com.marian.owncloudbackend.exceptions.FileEntityNotFoundException;
 import com.marian.owncloudbackend.exceptions.LoginErrorException;
+import com.marian.owncloudbackend.exceptions.OutOfSpaceException;
 import com.marian.owncloudbackend.exceptions.UserAlreadyExistsException;
 
 @RestControllerAdvice
@@ -72,6 +74,28 @@ public class ControllerAdvice {
         body.put("message", ex.getMessage());
 
         return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(OutOfSpaceException.class)
+    public ResponseEntity<Object> handleOutOfSpace(
+            RuntimeException ex, WebRequest request) {
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("message", ex.getMessage());
+
+        return new ResponseEntity<>(body, HttpStatus.PRECONDITION_FAILED);
+    }
+
+    @ExceptionHandler(AbnormalAssignmentAmountException.class)
+    public ResponseEntity<Object> handleAbnormalAmount(
+            RuntimeException ex, WebRequest request) {
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("message", ex.getMessage());
+
+        return new ResponseEntity<>(body, HttpStatus.PRECONDITION_FAILED);
     }
 
 }

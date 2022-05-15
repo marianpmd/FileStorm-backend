@@ -3,19 +3,17 @@ package com.marian.owncloudbackend.controller;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.IOUtils;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import com.marian.owncloudbackend.DTO.FileEntityDTO;
+import com.marian.owncloudbackend.DTO.SystemInfoDTO;
 import com.marian.owncloudbackend.entity.UserEntity;
 import com.marian.owncloudbackend.service.FileStoreService;
 import com.marian.owncloudbackend.service.UserService;
@@ -96,26 +95,6 @@ public class FileController {
         };
     }
 
-//    @GetMapping("/one")
-//    public ResponseEntity<ByteArrayResource> getFileFromUserAndId(@RequestParam Long id, HttpServletResponse response) throws IOException {
-//        String userEmail = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-//        UserEntity userByEmail = userService.getUserByEmail(userEmail);
-//        File file = fileStoreService.getFileByIdAndUser(id, userByEmail);
-//        String fileName = file.getName();
-//
-//        var headers = new HttpHeaders();
-//        headers.add(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=" + fileName);
-//        headers.add(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS,HttpHeaders.CONTENT_DISPOSITION);
-//
-//
-//        ByteArrayResource resource = new ByteArrayResource(Files.readAllBytes(file.toPath()));
-//        return ResponseEntity.ok()
-//                .headers(headers)
-//                .contentLength(file.length())
-//                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-//                .body(resource);
-//    }
-
     @DeleteMapping("/delete/one")
     public ResponseEntity<String> deleteFileFromUserAndId(@RequestParam Long id) {
         String userEmail = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -134,6 +113,13 @@ public class FileController {
         List<FileEntityDTO> allFilesLike = fileStoreService.getAllFilesLike(keyword);
 
         return ResponseEntity.ok(allFilesLike);
+    }
+
+    @GetMapping("/systemInfo")
+    @PreAuthorize("hasAuthority('admin')")
+    public ResponseEntity<?> getSystemInfo(){
+        SystemInfoDTO systemInfo = fileStoreService.getSystemInfo();
+        return ResponseEntity.ok(systemInfo);
     }
 
 }
