@@ -101,6 +101,7 @@ public class FileController {
         UserEntity userByEmail = userService.getUserByEmail(userEmail);
 
         if (fileStoreService.deleteFileByIdAndUser(id, userByEmail)) {
+            userService.recomputeUserStorage(userByEmail);
             return ResponseEntity.ok().build();
         }
 

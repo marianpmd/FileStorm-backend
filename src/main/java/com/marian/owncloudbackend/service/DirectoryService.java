@@ -113,6 +113,9 @@ public class DirectoryService {
     public DirectoryDTO deleteDirById(Long id) throws IOException {
         DirectoryEntity directoryEntity = directoryRepository.findById(id)
                 .orElseThrow(() -> new DirectoryNotFoundException("Dir not found for deletion"));
+
+        UserEntity user = directoryEntity.getUser();
+        userService.recomputeUserStorage(user);
         File directoryToDelete = Path.of(directoryEntity.getPath()).toFile();
         FileUtils.deleteDirectory(directoryToDelete);
         DirectoryDTO directoryDTO = directoryEntityMapper.directoryEntityToDirectoryDTO(directoryEntity);

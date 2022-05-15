@@ -14,6 +14,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import com.marian.owncloudbackend.DTO.UserDTO;
+import com.marian.owncloudbackend.entity.FileEntity;
 import com.marian.owncloudbackend.entity.UserEntity;
 import com.marian.owncloudbackend.exceptions.AbnormalAssignmentAmountException;
 import com.marian.owncloudbackend.mapper.UserMapper;
@@ -110,5 +111,19 @@ public class UserService implements UserDetailsService {
         userEntity.setAssignedSpace(BigInteger.valueOf(requestedAmount));
 
         return userMapper.entityToDTO(userRepository.save(userEntity));
+    }
+
+    public UserEntity recomputeUserStorage(UserEntity user) {
+        List<FileEntity> files = user.getFiles();
+        if (files.isEmpty()){
+            user.setOccupiedSpace(BigInteger.ZERO);
+            return userRepository.save(user);
+        }
+        BigInteger total = BigInteger.ZERO;
+        for (FileEntity file : files) {
+            total = total.add(file.getSize());
+        }
+        user.setOccupiedSpace(total);
+        return userRepository.save(user);
     }
 }
