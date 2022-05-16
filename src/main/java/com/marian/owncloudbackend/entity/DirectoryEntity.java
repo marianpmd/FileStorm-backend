@@ -35,7 +35,7 @@ public class DirectoryEntity {
     private String path;
     private String name;
 
-    @ManyToOne(cascade = CascadeType.REMOVE)
+    @ManyToOne
     private UserEntity user;
 
     @OneToMany(mappedBy = "directory",cascade = CascadeType.REMOVE)
