@@ -37,8 +37,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     public PasswordEncoder bCryptPasswordEncoder() {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();//use this if you can
         NoOpPasswordEncoder encoder1 = (NoOpPasswordEncoder) NoOpPasswordEncoder.getInstance();
-        System.out.println(encoder.encode("password"));
-        return encoder1;
+        System.out.println(encoder.encode("admin"));
+        System.out.println(encoder.encode("11"));
+        return encoder;
     }
 
 
