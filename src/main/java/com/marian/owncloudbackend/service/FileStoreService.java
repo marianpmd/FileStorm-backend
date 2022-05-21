@@ -21,6 +21,7 @@ import org.apache.commons.io.IOUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -44,6 +45,7 @@ public class FileStoreService {
     private final FileEntityMapper fileEntityMapper;
     private final UserService userService;
     private final DirectoryService directoryService;
+    private final SimpMessagingTemplate template;
 
     public File getFileByIdAndUser(Long id, UserEntity user) {
         FileEntity byIdAndUser = fileEntityRepository.findByIdAndUser(id, user)
@@ -133,8 +135,9 @@ public class FileStoreService {
         }
 
         userService.updateUserSpace(userByEmail,size);
-
-        return fileEntityMapper.fileEntityToFileEntityDTO(saved);
+        FileEntityDTO fileEntityDTO = fileEntityMapper.fileEntityToFileEntityDTO(saved);
+        template.convertAndSendToUser(userEmail, "/queue/newFile", fileEntityDTO);
+        return fileEntityDTO;
     }
 
     public boolean createUserDirectory(UserEntity userEntity) {

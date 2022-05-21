@@ -11,6 +11,8 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.marian.owncloudbackend.DTO.UserDTO;
@@ -65,7 +67,9 @@ public class UserService implements UserDetailsService {
             throw new IllegalStateException("User already exists");
         }
 
-        var newUser = new UserEntity(email, password, role);
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+        var newUser = new UserEntity(email, passwordEncoder.encode(password), role);
 
         return this.userRepository.save(newUser);
     }
