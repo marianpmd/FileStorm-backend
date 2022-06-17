@@ -54,7 +54,8 @@ public class FileController {
     }
 
     @GetMapping("/check")
-    public ResponseEntity<Boolean> checkFile(@RequestParam ArrayList<String> pathFromRoot, @RequestParam String filename) {
+    public ResponseEntity<Boolean> checkFile(@RequestParam ArrayList<String> pathFromRoot,
+                                             @RequestParam String filename) {
         boolean fileExists = fileStoreService.checkIfExists(filename, pathFromRoot);
         if (fileExists) {
             return ResponseEntity.ok().body(true);
@@ -72,7 +73,8 @@ public class FileController {
                                                                   @RequestParam ArrayList<String> pathFromRoot) {
         var userEmail = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        Page<FileEntityDTO> allFilesForUser = fileStoreService.getAllFilesForUser(userEmail, sortBy, page, size, asc, pathFromRoot);
+        Page<FileEntityDTO> allFilesForUser = fileStoreService
+                .getAllFilesForUser(userEmail, sortBy, page, size, asc, pathFromRoot);
 
         return ResponseEntity.ok(allFilesForUser);
 
@@ -97,7 +99,8 @@ public class FileController {
 
     @DeleteMapping("/delete/one")
     public ResponseEntity<String> deleteFileFromUserAndId(@RequestParam Long id) {
-        String userEmail = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String userEmail = (String) SecurityContextHolder.getContext()
+                .getAuthentication().getPrincipal();
         UserEntity userByEmail = userService.getUserByEmail(userEmail);
 
         if (fileStoreService.deleteFileByIdAndUser(id, userByEmail)) {

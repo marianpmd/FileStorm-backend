@@ -16,6 +16,7 @@ import java.util.Objects;
 @ToString
 @RequiredArgsConstructor
 @AllArgsConstructor
+@Builder
 public class FileEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)

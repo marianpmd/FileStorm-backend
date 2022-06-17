@@ -11,21 +11,8 @@ import com.marian.owncloudbackend.entity.UserEntity;
 
 @Repository
 public interface DirectoryRepository extends JpaRepository<DirectoryEntity, Long> {
-
-    void deleteAllByUser(UserEntity user);
-
     List<DirectoryEntity> findByUser(UserEntity user);
-
-
-
     Optional<DirectoryEntity> findByPath(String path);
-
-
     List<DirectoryEntity> findByPathContainsAndUser(String path, UserEntity user);
-
-
-
-
-
 
 }

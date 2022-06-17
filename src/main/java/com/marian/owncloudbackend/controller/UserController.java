@@ -39,7 +39,10 @@ public class UserController {
 
     @GetMapping("/info")
     public ResponseEntity<?> getUserInfo(String email){
-        String authenticatedUserEmail = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
+        String authenticatedUserEmail = SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getPrincipal()
+                .toString();
         if (!authenticatedUserEmail.equals(email)){
             return new ResponseEntity<>("Not allowed", HttpStatus.FORBIDDEN);
         }

@@ -16,12 +16,8 @@ import java.util.Optional;
 
 public interface FileEntityRepository extends JpaRepository<FileEntity, Long> {
     Page<FileEntity> findByUser(UserEntity user, Pageable pageable);
-
     Page<FileEntity> findByDirectoryAndUser(DirectoryEntity directory, UserEntity user, Pageable pageable);
-
     Optional<FileEntity> findByIdAndUser(Long id, UserEntity user);
-
     Optional<FileEntity> findByName(String name);
-
     List<FileEntity> findByUserAndNameContaining(UserEntity user, String name);
 }

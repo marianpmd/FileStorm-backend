@@ -126,15 +126,26 @@ public class FileStoreService {
                 IOUtils.copyLarge(file.getInputStream(), Files.newOutputStream(fileToSave.toPath()));
                 FileEntity existingFileEntity = fileEntityRepository.findByName(fileName)
                         .orElseThrow(() -> new FileEntityNotFoundException("File was supposed to exist in the DB, SYNC ERROR."));
-                existingFileEntity.setLastModified(LocalDateTime.now());
-                saved = fileEntityRepository.save(existingFileEntity);
+
+                FileEntity newFile = FileEntity.builder()
+                        .name(existingFileEntity.getName())
+                        .path(existingFileEntity.getPath())
+                        .size(size)
+                        .lastModified(LocalDateTime.now())
+                        .fileType(existingFileEntity.getFileType())
+                        .user(existingFileEntity.getUser())
+                        .directory(existingFileEntity.getDirectory())
+                        .build();
+
+                fileEntityRepository.delete(existingFileEntity);
+                saved = fileEntityRepository.save(newFile);
             }
         } else {
             IOUtils.copyLarge(file.getInputStream(), Files.newOutputStream(fileToSave.toPath()));
             saved = fileEntityRepository.save(fileEntity);
         }
 
-        userService.updateUserSpace(userByEmail,size);
+        userService.recomputeUserStorage(userByEmail);
         FileEntityDTO fileEntityDTO = fileEntityMapper.fileEntityToFileEntityDTO(saved);
         template.convertAndSendToUser(userEmail, "/queue/newFile", fileEntityDTO);
         return fileEntityDTO;
@@ -187,7 +198,9 @@ public class FileStoreService {
     }
 
     public boolean checkIfExists(String filename,ArrayList<String> pathFromRoot) {
-        String userEmail = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
+        String userEmail = SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getPrincipal().toString();
 
         pathFromRoot.add(filename);
         Path path = FileStoreUtils.computePathFromRoot(userEmail, pathFromRoot);
@@ -212,14 +225,10 @@ public class FileStoreService {
     public SystemInfoDTO getSystemInfo() {
 
         File file = new File(FileStoreUtils.getBaseDir());
-
         long totalSpace = file.getTotalSpace();
         long usableSpace = file.getUsableSpace();
         long totalAssignedSpace = userService.getTotalAssignedSpace();
         usableSpace = usableSpace - totalAssignedSpace;
-
-        System.out.println(totalSpace);
-        System.out.println(usableSpace);
 
         return SystemInfoDTO.builder()
                 .totalSpace(totalSpace)

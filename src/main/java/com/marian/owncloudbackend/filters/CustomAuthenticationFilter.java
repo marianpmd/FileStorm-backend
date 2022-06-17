@@ -20,6 +20,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Duration;
+import java.time.LocalTime;
 import java.time.Period;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
@@ -64,12 +65,13 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
     }
 
     @Override
-    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) throws IOException, ServletException {
+    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) {
         User user = (User)authentication.getPrincipal();
         Algorithm algorithm = Algorithm.HMAC256(secret.getBytes());
 
         String accessToken = createAccessToken(request, user, algorithm);
         Cookie cookie = new Cookie("app-jwt", accessToken);
+        cookie.setMaxAge((int) Duration.ofDays(50).getSeconds());
         response.addCookie(cookie);
     }
 

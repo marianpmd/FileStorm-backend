@@ -48,6 +48,9 @@ public class DirectoryService {
 
         DirectoryEntity createdDirectory = null;
         try {
+            if (directoryPath.toFile().exists()){
+                throw new IllegalStateException("Dir already exists!");
+            }
             FileUtils.forceMkdir(directoryPath.toFile());
             if (!pathsFromRoot.get(pathsFromRoot.size() - 1).equals(userEmail)) {
                 DirectoryEntity directoryEntity = new DirectoryEntity(directoryPath.toString(), pathsFromRoot.get(pathsFromRoot.size() - 1), userByEmail);
@@ -64,8 +67,6 @@ public class DirectoryService {
         UserEntity userByEmail = userService.getUserByEmail(userEmail);
 
         Path directoryPath = FileStoreUtils.computePathFromRoot(userEmail, pathsFromRoot);
-
-
         List<DirectoryEntity> byFiles_path = directoryRepository.findByPathContainsAndUser(directoryPath.toString(), userByEmail);
         List<DirectoryEntity> correctDirs = new ArrayList<>();
 

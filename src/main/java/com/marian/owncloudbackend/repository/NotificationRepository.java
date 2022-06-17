@@ -11,13 +11,5 @@ import com.marian.owncloudbackend.entity.UserEntity;
 
 @Repository
 public interface NotificationRepository extends JpaRepository<NotificationEntity,Long> {
-    List<NotificationEntity> findByOrderByNotificationStateAsc(Sort sort);
-
-    List<NotificationEntity> findByOrderByNotificationStateDescDateTimeDesc();
-
     List<NotificationEntity> findByUserEntityOrderByNotificationStateDescDateTimeDesc(UserEntity userEntity);
-
-
-
-
 }

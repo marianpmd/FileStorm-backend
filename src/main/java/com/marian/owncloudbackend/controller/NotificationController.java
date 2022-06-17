@@ -22,7 +22,6 @@ import lombok.RequiredArgsConstructor;
 public class NotificationController {
     private final NotificationService notificationService;
 
-
     @PostMapping("/admin")
     public ResponseEntity<?> notifyAdmin(@RequestBody UserStorageRequest userStorageRequest) {
         notificationService.notifyAdminForUserRequest(userStorageRequest);

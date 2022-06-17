@@ -105,13 +105,15 @@ public class UserService implements UserDetailsService {
 
     public UserDTO assignToUser(Long userId, String amount, Long usableSpace) {
         long requestedAmount = FileStoreUtils.parseAmountString(amount);
-        if (requestedAmount > usableSpace)throw new AbnormalAssignmentAmountException("Not enough sys space to assign!");
+        if (requestedAmount > usableSpace)
+            throw new AbnormalAssignmentAmountException("Not enough sys space to assign!");
 
 
         UserEntity userEntity = userRepository.findById(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("User does not exist " + userId));
 
-        if (userEntity.getOccupiedSpace().longValueExact() > requestedAmount)throw new AbnormalAssignmentAmountException("User has already occupied more space!");
+        if (userEntity.getOccupiedSpace().longValueExact() > requestedAmount)
+            throw new AbnormalAssignmentAmountException("User has already occupied more space!");
         userEntity.setAssignedSpace(BigInteger.valueOf(requestedAmount));
 
         return userMapper.entityToDTO(userRepository.save(userEntity));
