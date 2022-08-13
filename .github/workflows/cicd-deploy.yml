@@ -23,6 +23,6 @@ jobs:
         distribution: 'temurin'
         cache: maven
     - name: Build and Test with Maven
-      run: mvn clean install package wagon:upload-single
+      run: mvn clean install antrun:run@deploy
       
  
