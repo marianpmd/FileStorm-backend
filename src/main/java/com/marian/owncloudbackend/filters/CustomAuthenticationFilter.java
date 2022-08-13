@@ -71,7 +71,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 
         String accessToken = createAccessToken(request, user, algorithm);
         Cookie cookie = new Cookie("app-jwt", accessToken);
-        cookie.setMaxAge((int) Duration.ofDays(50).getSeconds());
+        cookie.setMaxAge(60 * 60 * 24 * 365 * 10); //10 years
         response.addCookie(cookie);
     }
 
@@ -79,7 +79,6 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
     private String createAccessToken(HttpServletRequest request, User user, Algorithm algorithm) {
         return JWT.create()
                 .withSubject(user.getUsername())
-                .withExpiresAt(new Date(System.currentTimeMillis() + 3000 * 60 * 1000)) //3000mins
                 .withIssuer(request.getRequestURL().toString())
                 .withClaim("roles", user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
                 .sign(algorithm);

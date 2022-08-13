@@ -14,6 +14,7 @@ import com.marian.owncloudbackend.exceptions.AbnormalAssignmentAmountException;
 import com.marian.owncloudbackend.exceptions.DirectoryNotFoundException;
 import com.marian.owncloudbackend.exceptions.FileAlreadyOnFSException;
 import com.marian.owncloudbackend.exceptions.FileEntityNotFoundException;
+import com.marian.owncloudbackend.exceptions.FileIsNotPublicException;
 import com.marian.owncloudbackend.exceptions.LoginErrorException;
 import com.marian.owncloudbackend.exceptions.OutOfSpaceException;
 import com.marian.owncloudbackend.exceptions.UserAlreadyExistsException;
@@ -96,6 +97,11 @@ public class ControllerAdvice {
         body.put("message", ex.getMessage());
 
         return new ResponseEntity<>(body, HttpStatus.PRECONDITION_FAILED);
+    }
+
+    @ExceptionHandler(FileIsNotPublicException.class)
+    public String handleFileNotPublic(RuntimeException ex, WebRequest request) {
+        return ex.getMessage();
     }
 
 }

@@ -9,7 +9,7 @@ import java.math.BigInteger;
 
 
 public record FileEntityDTO(Long id, String name, String path, BigInteger size,
-                            FileType fileType) implements Serializable {
+                            FileType fileType,Boolean isPublic) implements Serializable {
 
 
     public static FileEntityDTO fromEntity(FileEntity entity) {
@@ -17,6 +17,7 @@ public record FileEntityDTO(Long id, String name, String path, BigInteger size,
                 entity.getName(),
                 entity.getPath(),
                 entity.getSize(),
-                entity.getFileType());
+                entity.getFileType(),
+                entity.getIsPublic());
     }
 }

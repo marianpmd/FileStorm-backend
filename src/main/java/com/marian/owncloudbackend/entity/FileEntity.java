@@ -26,6 +26,8 @@ public class FileEntity {
     private BigInteger size;
     private LocalDateTime lastModified;
 
+    private Boolean isPublic = false;
+
     @Enumerated(EnumType.STRING)
     private FileType fileType;
 

@@ -18,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -97,6 +98,21 @@ public class FileController {
         };
     }
 
+    @GetMapping("/public")
+    public StreamingResponseBody getPublicFile(HttpServletResponse response, @RequestParam Long id) {
+        File file = fileStoreService.getFileByIdPublic(id);
+        String fileName = file.getName();
+
+        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName);
+        response.setHeader(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION);
+
+        return outputStream -> {
+            FileInputStream inputStream = new FileInputStream(file);
+            IOUtils.copyLarge(inputStream, response.getOutputStream());
+            inputStream.close();
+        };
+    }
+
     @DeleteMapping("/delete/one")
     public ResponseEntity<String> deleteFileFromUserAndId(@RequestParam Long id) {
         String userEmail = (String) SecurityContextHolder.getContext()
@@ -124,6 +140,18 @@ public class FileController {
     public ResponseEntity<?> getSystemInfo(){
         SystemInfoDTO systemInfo = fileStoreService.getSystemInfo();
         return ResponseEntity.ok(systemInfo);
+    }
+
+    @PutMapping("/makePublic")
+    public ResponseEntity<?> makeFilePublic(Long id){
+        FileEntityDTO fileEntityDTO = fileStoreService.makeFilePublic(id);
+        return ResponseEntity.ok(fileEntityDTO);
+    }
+
+    @PutMapping("/makePrivate")
+    public ResponseEntity<?> makeFilePrivate(Long id){
+        FileEntityDTO fileEntityDTO = fileStoreService.makeFilePrivate(id);
+        return ResponseEntity.ok(fileEntityDTO);
     }
 
 }

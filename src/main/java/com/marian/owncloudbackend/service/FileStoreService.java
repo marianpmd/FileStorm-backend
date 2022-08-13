@@ -9,6 +9,7 @@ import com.marian.owncloudbackend.enums.FileType;
 import com.marian.owncloudbackend.exceptions.DirectoryNotFoundException;
 import com.marian.owncloudbackend.exceptions.FileDoesNotExistException;
 import com.marian.owncloudbackend.exceptions.FileEntityNotFoundException;
+import com.marian.owncloudbackend.exceptions.FileIsNotPublicException;
 import com.marian.owncloudbackend.exceptions.OutOfSpaceException;
 import com.marian.owncloudbackend.mapper.FileEntityMapper;
 import com.marian.owncloudbackend.repository.FileEntityRepository;
@@ -55,6 +56,22 @@ public class FileStoreService {
 
         if (!file.exists()) {
             throw new FileDoesNotExistException("The file " + file + " does not exist on FS!");
+        }
+
+        return file;
+    }
+
+    public File getFileByIdPublic(Long id){
+        FileEntity byIdAndUser = fileEntityRepository.findById(id)
+                .orElseThrow(() -> new FileEntityNotFoundException("The requested file was not found in DB!"));
+
+        File file = FileUtils.getFile(byIdAndUser.getPath());
+
+        if (!file.exists()) {
+            throw new FileDoesNotExistException("The file " + file + " does not exist on FS!");
+        }
+        if (!byIdAndUser.getIsPublic()){
+            throw new FileIsNotPublicException("This file is not public!");
         }
 
         return file;
@@ -235,4 +252,26 @@ public class FileStoreService {
                 .usableSpace(usableSpace)
                 .build();
     }
+
+    public FileEntityDTO makeFilePublic(Long id) {
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
+        UserEntity userByEmail = userService.getUserByEmail(userEmail);
+        FileEntity fileEntity = fileEntityRepository.findByIdAndUser(id, userByEmail)
+                .orElseThrow(() -> new FileDoesNotExistException("File with id " + id + "from user : " + userEmail + "not found."));
+        fileEntity.setIsPublic(true);
+        FileEntity entity = fileEntityRepository.save(fileEntity);
+        return  fileEntityMapper.fileEntityToFileEntityDTO(entity);
+    }
+
+    public FileEntityDTO makeFilePrivate(Long id) {
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
+        UserEntity userByEmail = userService.getUserByEmail(userEmail);
+        FileEntity fileEntity = fileEntityRepository.findByIdAndUser(id, userByEmail)
+                .orElseThrow(() -> new FileDoesNotExistException("File with id " + id + "from user : " + userEmail + "not found."));
+        fileEntity.setIsPublic(false);
+        FileEntity entity = fileEntityRepository.save(fileEntity);
+        return  fileEntityMapper.fileEntityToFileEntityDTO(entity);
+    }
+
+
 }
