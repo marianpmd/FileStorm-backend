@@ -22,7 +22,7 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         cache: maven
-    - name: Build with Maven
+    - name: Build and Test with Maven
       run: mvn clean install package wagon:upload-single
       
  

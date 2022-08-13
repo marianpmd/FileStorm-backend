@@ -132,6 +132,12 @@
 
 
     <build>
+        <extensions>
+            <extension>
+                <groupId>org.apache.maven.wagon</groupId>
+                <artifactId>wagon-ssh</artifactId>
+            </extension>
+        </extensions>
         <plugins>
 
             <plugin>
@@ -174,6 +180,17 @@
                             <artifactId>lombok</artifactId>
                         </exclude>
                     </excludes>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>wagon-maven-plugin</artifactId>
+                <version>1.0</version>
+                <configuration>
+                    <serverId>mariancr-home</serverId>
+                    <fromFile>target/FileStorm-backend-1.0.jar</fromFile>
+                    <url>scp://mariancr.go.ro/home/marian/test-depl</url>
                 </configuration>
             </plugin>
         </plugins>
