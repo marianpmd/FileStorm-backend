@@ -18,7 +18,7 @@
         <devserver.username>marian</devserver.username>
         <devserver.password>petrica1</devserver.password>
         <devserver.host>mariancr.go.ro</devserver.host>
-        <devserver.path>/home/marian/test-depl</devserver.path>
+        <devserver.path>/home/marian</devserver.path>
         <!--may need a downgrade-->
         <org.mapstruct.version>1.4.2.Final</org.mapstruct.version>
     </properties>
@@ -196,7 +196,7 @@
                 <executions>
                     <execution>
                         <id>deploy</id>
-                        <phase>install</phase>
+                        <phase>deploy</phase>
                         <goals>
                             <goal>run</goal>
                         </goals>
@@ -224,7 +224,7 @@
                                          host="${devserver.host}"
                                          username="${devserver.username}"
                                          password="${devserver.password}"
-                                         command="sudo systemctl restart start_backend.service"
+                                         command="sudo /bin/systemctl restart start_backend.service"
                                          timeout="120000" />
                                 <echo message="The deployment is done." />
 
@@ -252,16 +252,6 @@
                 </dependencies>
             </plugin>
 
-<!--            <plugin>-->
-<!--                <groupId>org.codehaus.mojo</groupId>-->
-<!--                <artifactId>wagon-maven-plugin</artifactId>-->
-<!--                <version>1.0</version>-->
-<!--                <configuration>-->
-<!--                    <serverId>mariancr-home</serverId>-->
-<!--                    <fromFile>target/FileStorm-backend-1.0.jar</fromFile>-->
-<!--                    <url>scp://mariancr.go.ro/home/marian/test-depl</url>-->
-<!--                </configuration>-->
-<!--            </plugin>-->
         </plugins>
     </build>
 

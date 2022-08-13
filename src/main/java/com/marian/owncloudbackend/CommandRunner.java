@@ -50,5 +50,23 @@ public class CommandRunner implements CommandLineRunner {
             }
 
         }
+        while(true){
+            System.out.println("NEW-DEP *****************************");
+            System.out.println("NEW-DEP *****************************");
+            System.out.println("NEW-DEP *****************************");
+            System.out.println("NEW-DEP *****************************");
+            System.out.println("NEW-DEP *****************************");
+            System.out.println("NEW-DEP *****************************");
+            System.out.println("NEW-DEP *****************************");
+            System.out.println("NEW-DEP *****************************");
+            System.out.println("NEW-DEP *****************************");
+            System.out.println("NEW-DEP *****************************");
+            System.out.println("NEW-DEP *****************************");
+            System.out.println("NEW-DEP *****************************");
+            System.out.println("NEW-DEP *****************************");
+            System.out.println("NEW-DEP *****************************");
+            System.out.println("NEW-DEP *****************************");
+            Thread.sleep(500L);
+        }
     }
 }
