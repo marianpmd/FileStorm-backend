@@ -220,7 +220,7 @@
 
 <!--                                &lt;!&ndash; remote host and the command to be executed there &ndash;&gt;-->
                                 <echo message="Starting htct app ..." />
-                                <sshexec trust="true" failonerror="true"
+                                <sshexec trust="true" failonerror="true" verbose="on"
                                          host="${devserver.host}"
                                          username="${devserver.username}"
                                          password="${devserver.password}"
