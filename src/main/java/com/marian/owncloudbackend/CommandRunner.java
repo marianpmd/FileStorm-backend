@@ -50,7 +50,8 @@ public class CommandRunner implements CommandLineRunner {
             }
 
         }
-        while(true){
+        int i = 0;
+        while(i < 10){
             System.out.println("NEW-DEP *****************************");
             System.out.println("NEW-DEP *****************************");
             System.out.println("NEW-DEP *****************************");
@@ -66,7 +67,8 @@ public class CommandRunner implements CommandLineRunner {
             System.out.println("NEW-DEP *****************************");
             System.out.println("NEW-DEP *****************************");
             System.out.println("NEW-DEP *****************************");
-            Thread.sleep(500L);
+            Thread.sleep(100L);
+            i++;
         }
     }
 }
