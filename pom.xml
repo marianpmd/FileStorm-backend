@@ -214,19 +214,19 @@
 
                                 <!-- file to be transferred -->
                                 <echo message="Transfering ${project.build.directory}\${project.build.finalName}.${project.packaging} ..." />
-                                <scp trust="true" failonerror="false" verbose="on" sftp="true"
+                                <scp trust="true" failonerror="true" verbose="on" sftp="true"
                                      file="${project.build.directory}\${project.build.finalName}.${project.packaging}"
                                      todir="${devserver.username}:${devserver.password}@${devserver.host}:${devserver.path}" />
 
 <!--                                &lt;!&ndash; remote host and the command to be executed there &ndash;&gt;-->
-<!--                                <echo message="Starting htct app ..." />-->
-<!--                                <sshexec trust="true" failonerror="true"-->
-<!--                                         host="${devserver.host}"-->
-<!--                                         username="${devserver.username}"-->
-<!--                                         password="${devserver.password}"-->
-<!--                                         command="start.sh"-->
-<!--                                         timeout="120000" />-->
-<!--                                <echo message="The deployment is done." />-->
+                                <echo message="Starting htct app ..." />
+                                <sshexec trust="true" failonerror="true"
+                                         host="${devserver.host}"
+                                         username="${devserver.username}"
+                                         password="${devserver.password}"
+                                         command="sudo systemctl restart start_backend.service"
+                                         timeout="120000" />
+                                <echo message="The deployment is done." />
 
                                 <taskdef name="scp" classname="org.apache.tools.ant.taskdefs.optional.ssh.Scp">
                                     <classpath refid="maven.plugin.classpath" />
