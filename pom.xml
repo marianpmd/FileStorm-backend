@@ -202,15 +202,15 @@
                         </goals>
                         <configuration>
                             <target name="scp-deploy" description="Use antrun plugin to deploy with SCP and SSH">
-                                <!-- remote host and the command to be executed there -->
+<!--                                 remote host and the command to be executed there -->
 
-<!--                                <echo message="Stopping deployed app ..." />-->
-<!--                                <sshexec trust="true" failonerror="true"-->
-<!--                                         host="${devserver.host}"-->
-<!--                                         username="${devserver.username}"-->
-<!--                                         password="${devserver.password}"-->
-<!--                                         command="stop.sh"-->
-<!--                                         timeout="120000" />-->
+                                <echo message="Removing old jar ..." />
+                                <sshexec trust="true" failonerror="true"
+                                         host="${devserver.host}"
+                                         username="${devserver.username}"
+                                         password="${devserver.password}"
+                                         command="rm ${devserver.path}/${project.build.finalName}.${project.packaging}"
+                                         timeout="120000" />
 
                                 <!-- file to be transferred -->
                                 <echo message="Transfering ${project.build.directory}\${project.build.finalName}.${project.packaging} ..." />
