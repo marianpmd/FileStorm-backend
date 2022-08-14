@@ -20,7 +20,7 @@ import java.util.List;
 public class FileStormBackendApplication {
 
     public static void main(String[] args) {
-        System.out.println("STARTING BACKEND APP");
+        System.out.println("***************************STARTING BACKEND APP******************");
         SpringApplication.run(FileStormBackendApplication.class, args);
         FileStoreUtils.makeBaseDir();
     }
