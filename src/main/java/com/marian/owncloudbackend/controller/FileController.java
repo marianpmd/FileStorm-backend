@@ -26,9 +26,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import com.marian.owncloudbackend.dto.FileEntityDTO;
 import com.marian.owncloudbackend.dto.SystemInfoDTO;
-import com.marian.owncloudbackend.entity.UserEntity;
 import com.marian.owncloudbackend.service.FileStoreService;
-import com.marian.owncloudbackend.service.UserService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,7 +38,6 @@ import lombok.extern.slf4j.Slf4j;
 public class FileController {
 
     private final FileStoreService fileStoreService;
-    private final UserService userService;
 
     @PostMapping("/upload")
     public ResponseEntity<FileEntityDTO> uploadFile(final MultipartFile file,
@@ -79,8 +76,7 @@ public class FileController {
     @GetMapping("/one")
     public StreamingResponseBody getFileFromUserAndId(HttpServletResponse response, @RequestParam Long id) {
         String userEmail = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        UserEntity userByEmail = userService.getUserByEmail(userEmail);
-        File file = fileStoreService.getFileByIdAndUser(id, userByEmail);
+        File file = fileStoreService.getFileByIdAndUser(id, userEmail);
         String fileName = file.getName();
 
         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName);
@@ -112,10 +108,8 @@ public class FileController {
     public ResponseEntity<String> deleteFileFromUserAndId(@RequestParam Long id) {
         String userEmail = (String) SecurityContextHolder.getContext()
                 .getAuthentication().getPrincipal();
-        UserEntity userByEmail = userService.getUserByEmail(userEmail);
 
-        if (fileStoreService.deleteFileByIdAndUser(id, userByEmail)) {
-            userService.recomputeUserStorage(userByEmail);
+        if (fileStoreService.deleteFileByIdAndUser(id, userEmail)) {
             return ResponseEntity.ok().build();
         }
 
@@ -130,12 +124,6 @@ public class FileController {
         return ResponseEntity.ok(allFilesLike);
     }
 
-    @GetMapping("/systemInfo")
-    @PreAuthorize("hasAuthority('admin')")
-    public ResponseEntity<SystemInfoDTO> getSystemInfo() {
-        SystemInfoDTO systemInfo = fileStoreService.getSystemInfo();
-        return ResponseEntity.ok(systemInfo);
-    }
 
     @PutMapping("/makePublic")
     public ResponseEntity<FileEntityDTO> makeFilePublic(Long id) {
