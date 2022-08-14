@@ -1,4 +1,4 @@
-package com.marian.owncloudbackend.DTO;
+package com.marian.owncloudbackend.dto;
 
 import java.time.LocalDateTime;
 

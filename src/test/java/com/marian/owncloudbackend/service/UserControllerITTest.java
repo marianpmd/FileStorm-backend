@@ -13,13 +13,13 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
-public class UserControllerITTest {
+class UserControllerITTest {
     @Autowired
     private MockMvc mvc;
 
     @Test
     @WithMockUser("john")
-    public void getUserInfo_notAllowed() throws Exception {
+    void getUserInfo_notAllowed() throws Exception {
         mvc.perform(
                         get("/user/info"))
                 .andDo(print())

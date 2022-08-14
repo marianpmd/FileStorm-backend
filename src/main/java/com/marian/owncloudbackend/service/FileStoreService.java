@@ -1,7 +1,27 @@
 package com.marian.owncloudbackend.service;
 
-import com.marian.owncloudbackend.DTO.FileEntityDTO;
-import com.marian.owncloudbackend.DTO.SystemInfoDTO;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.marian.owncloudbackend.dto.FileEntityDTO;
+import com.marian.owncloudbackend.dto.SystemInfoDTO;
 import com.marian.owncloudbackend.entity.DirectoryEntity;
 import com.marian.owncloudbackend.entity.FileEntity;
 import com.marian.owncloudbackend.entity.UserEntity;
@@ -17,25 +37,6 @@ import com.marian.owncloudbackend.utils.FileStoreUtils;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.io.File;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -61,7 +62,7 @@ public class FileStoreService {
         return file;
     }
 
-    public File getFileByIdPublic(Long id){
+    public File getFileByIdPublic(Long id) {
         FileEntity byIdAndUser = fileEntityRepository.findById(id)
                 .orElseThrow(() -> new FileEntityNotFoundException("The requested file was not found in DB!"));
 
@@ -70,7 +71,7 @@ public class FileStoreService {
         if (!file.exists()) {
             throw new FileDoesNotExistException("The file " + file + " does not exist on FS!");
         }
-        if (!byIdAndUser.getIsPublic()){
+        if (Boolean.FALSE.equals(byIdAndUser.getIsPublic())) {
             throw new FileIsNotPublicException("This file is not public!");
         }
 
@@ -103,7 +104,7 @@ public class FileStoreService {
         return byIdAndUser;
     }
 
-    public FileEntityDTO uploadNewFile(MultipartFile file, ArrayList<String> pathFromRoot, Boolean shouldUpdate) throws IOException {
+    public FileEntityDTO uploadNewFile(MultipartFile file, List<String> pathFromRoot, Boolean shouldUpdate) throws IOException {
         BigInteger size = BigInteger.valueOf(file.getSize());
 
         String fileName = file.getOriginalFilename();
@@ -117,13 +118,13 @@ public class FileStoreService {
         BigInteger assignedSpace = userByEmail.getAssignedSpace();
         BigInteger occupiedSpace = userByEmail.getOccupiedSpace();
 
-        if (occupiedSpace.add(assignedSpace).compareTo(size) == -1){
+        if (occupiedSpace.add(assignedSpace).compareTo(size) < 0) {
             throw new OutOfSpaceException("Not enough storage assigned to this user!");
         }
 
         String pathToDir = FileStoreUtils.computePathFromRoot(userByEmail.getEmail(), pathFromRoot).toString();
         boolean isDir = FileUtils.isDirectory(new File(pathToDir));
-        if (!isDir){
+        if (!isDir) {
             throw new DirectoryNotFoundException("Directory not found!");
         }
         Path finalPath = Paths.get(pathToDir, file.getOriginalFilename());
@@ -132,33 +133,43 @@ public class FileStoreService {
         FileEntity fileEntity = new FileEntity(fileName, finalPath.toString(), size, LocalDateTime.now(), filetype, userByEmail);
 
         DirectoryEntity directoryEntity = directoryService.getDirectoryEntityFromNameAndUser(userByEmail, pathFromRoot)
-                .orElseThrow(()->new DirectoryNotFoundException("Directory was not found for user : " + userEmail
-                + "and path : " + pathFromRoot));
+                .orElseThrow(() -> new DirectoryNotFoundException("Directory was not found for user : " + userEmail
+                        + "and path : " + pathFromRoot));
 
         fileEntity.setDirectory(directoryEntity);
-        FileEntity saved = null;
+        FileEntity saved;
         if (fileToSave.exists() && shouldUpdate.equals(Boolean.TRUE)) {
             log.info("File aready exists so replace on FS and update on DB");
-            if (fileToSave.delete()) {
-                IOUtils.copyLarge(file.getInputStream(), Files.newOutputStream(fileToSave.toPath()));
-                FileEntity existingFileEntity = fileEntityRepository.findByName(fileName)
-                        .orElseThrow(() -> new FileEntityNotFoundException("File was supposed to exist in the DB, SYNC ERROR."));
 
-                FileEntity newFile = FileEntity.builder()
-                        .name(existingFileEntity.getName())
-                        .path(existingFileEntity.getPath())
-                        .size(size)
-                        .lastModified(LocalDateTime.now())
-                        .fileType(existingFileEntity.getFileType())
-                        .user(existingFileEntity.getUser())
-                        .directory(existingFileEntity.getDirectory())
-                        .build();
-
-                fileEntityRepository.delete(existingFileEntity);
-                saved = fileEntityRepository.save(newFile);
+            Files.delete(fileToSave.toPath());
+            try(OutputStream outputStream = Files.newOutputStream(fileToSave.toPath())) {
+                IOUtils.copyLarge(file.getInputStream(), outputStream);
+            }catch (Exception e){
+                log.error("Exception when copying file {}, {}",fileEntity,e);
             }
+            FileEntity existingFileEntity = fileEntityRepository.findByName(fileName)
+                    .orElseThrow(() -> new FileEntityNotFoundException("File was supposed to exist in the DB, SYNC ERROR."));
+
+            FileEntity newFile = FileEntity.builder()
+                    .name(existingFileEntity.getName())
+                    .path(existingFileEntity.getPath())
+                    .size(size)
+                    .lastModified(LocalDateTime.now())
+                    .fileType(existingFileEntity.getFileType())
+                    .user(existingFileEntity.getUser())
+                    .directory(existingFileEntity.getDirectory())
+                    .build();
+
+            fileEntityRepository.delete(existingFileEntity);
+            saved = fileEntityRepository.save(newFile);
+
         } else {
-            IOUtils.copyLarge(file.getInputStream(), Files.newOutputStream(fileToSave.toPath()));
+            try(OutputStream outputStream = Files.newOutputStream(fileToSave.toPath())){
+
+                IOUtils.copyLarge(file.getInputStream(), outputStream);
+            }catch (Exception e){
+                log.error("Exception when copying file that is new {} , {} ",fileEntity,e);
+            }
             saved = fileEntityRepository.save(fileEntity);
         }
 
@@ -171,12 +182,12 @@ public class FileStoreService {
     public boolean createUserDirectory(UserEntity userEntity) {
         String baseDir = FileStoreUtils.getBaseDir();
         Path userPath = Paths.get(baseDir, userEntity.getEmail());
-        directoryService.createInitialDirectoryEntity(userPath,userEntity);
+        directoryService.createInitialDirectoryEntity(userPath, userEntity);
         File file = userPath.toFile();
         return file.mkdir();
     }
 
-    public Page<FileEntityDTO> getAllFilesForUser(String userEmail, String sortBy, int page, int size, boolean asc, ArrayList<String> pathFromRoot) {
+    public Page<FileEntityDTO> getAllFilesForUser(String userEmail, String sortBy, int page, int size, boolean asc, List<String> pathFromRoot) {
         UserEntity userByEmail = userService.getUserByEmail(userEmail);
 
         PageRequest pageable;
@@ -188,9 +199,8 @@ public class FileStoreService {
         }
 
         DirectoryEntity directoryEntity = directoryService.getDirectoryEntityFromNameAndUser(userByEmail, pathFromRoot)
-                .orElseThrow(); //todo handle
-                                //todo there is no root dir saved in the db
-        Page<FileEntity> byUser = fileEntityRepository.findByDirectoryAndUser(directoryEntity,userByEmail, pageable);
+                .orElseThrow();
+        Page<FileEntity> byUser = fileEntityRepository.findByDirectoryAndUser(directoryEntity, userByEmail, pageable);
 
         return byUser.map(FileEntityDTO::fromEntity);
     }
@@ -214,7 +224,7 @@ public class FileStoreService {
         return false;
     }
 
-    public boolean checkIfExists(String filename,ArrayList<String> pathFromRoot) {
+    public boolean checkIfExists(String filename, List<String> pathFromRoot) {
         String userEmail = SecurityContextHolder.getContext()
                 .getAuthentication()
                 .getPrincipal().toString();
@@ -260,7 +270,7 @@ public class FileStoreService {
                 .orElseThrow(() -> new FileDoesNotExistException("File with id " + id + "from user : " + userEmail + "not found."));
         fileEntity.setIsPublic(true);
         FileEntity entity = fileEntityRepository.save(fileEntity);
-        return  fileEntityMapper.fileEntityToFileEntityDTO(entity);
+        return fileEntityMapper.fileEntityToFileEntityDTO(entity);
     }
 
     public FileEntityDTO makeFilePrivate(Long id) {
@@ -270,7 +280,7 @@ public class FileStoreService {
                 .orElseThrow(() -> new FileDoesNotExistException("File with id " + id + "from user : " + userEmail + "not found."));
         fileEntity.setIsPublic(false);
         FileEntity entity = fileEntityRepository.save(fileEntity);
-        return  fileEntityMapper.fileEntityToFileEntityDTO(entity);
+        return fileEntityMapper.fileEntityToFileEntityDTO(entity);
     }
 
 

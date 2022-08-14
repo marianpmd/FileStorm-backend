@@ -1,9 +1,8 @@
 package com.marian.owncloudbackend.mapper;
 
-import com.marian.owncloudbackend.DTO.FileEntityDTO;
+import com.marian.owncloudbackend.dto.FileEntityDTO;
 import com.marian.owncloudbackend.entity.FileEntity;
 import org.mapstruct.*;
-import org.springframework.data.domain.Page;
 
 import java.util.List;
 

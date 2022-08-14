@@ -80,7 +80,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
         return JWT.create()
                 .withSubject(user.getUsername())
                 .withIssuer(request.getRequestURL().toString())
-                .withClaim("roles", user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
+                .withClaim("roles", user.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList())
                 .sign(algorithm);
     }
 

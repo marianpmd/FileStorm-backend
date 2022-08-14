@@ -17,9 +17,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import com.marian.owncloudbackend.DTO.DirectoriesWithParentDTO;
-import com.marian.owncloudbackend.DTO.DirectoryDTO;
-import com.marian.owncloudbackend.DTO.UserDTO;
+import com.marian.owncloudbackend.dto.DirectoriesWithParentDTO;
+import com.marian.owncloudbackend.dto.DirectoryDTO;
+import com.marian.owncloudbackend.dto.UserDTO;
 import com.marian.owncloudbackend.entity.DirectoryEntity;
 import com.marian.owncloudbackend.entity.UserEntity;
 import com.marian.owncloudbackend.exceptions.DirectoryNotFoundException;
@@ -62,12 +62,12 @@ public class DirectoryService {
         return directoryEntityMapper.directoryEntityToDirectoryDTO(createdDirectory);
     }
 
-    public DirectoriesWithParentDTO getAllDirectoriesInPath(ArrayList<String> pathsFromRoot) {
+    public DirectoriesWithParentDTO getAllDirectoriesInPath(List<String> pathsFromRoot) {
         String userEmail = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
         UserEntity userByEmail = userService.getUserByEmail(userEmail);
 
         Path directoryPath = FileStoreUtils.computePathFromRoot(userEmail, pathsFromRoot);
-        List<DirectoryEntity> byFiles_path = directoryRepository.findByPathContainsAndUser(directoryPath.toString(), userByEmail);
+        List<DirectoryEntity> listOfPaths = directoryRepository.findByPathContainsAndUser(directoryPath.toString(), userByEmail);
         List<DirectoryEntity> correctDirs = new ArrayList<>();
 
         try (Stream<Path> stream = Files.list(directoryPath)) {
@@ -76,7 +76,7 @@ public class DirectoryService {
                     .map(Path::toString)
                     .collect(Collectors.toSet());
 
-            for (DirectoryEntity directoryEntity : byFiles_path) {
+            for (DirectoryEntity directoryEntity : listOfPaths) {
                 for (String correctPath : collect) {
                     if (directoryEntity.getPath().equals(correctPath)) {
                         correctDirs.add(directoryEntity);
@@ -101,7 +101,7 @@ public class DirectoryService {
                 .build();
     }
 
-    public Optional<DirectoryEntity> getDirectoryEntityFromNameAndUser(UserEntity userByEmail, ArrayList<String> pathFromRoot) {
+    public Optional<DirectoryEntity> getDirectoryEntityFromNameAndUser(UserEntity userByEmail, List<String> pathFromRoot) {
         Path directoryPath = FileStoreUtils.computePathFromRoot(userByEmail.getEmail(), pathFromRoot);
         return directoryRepository.findByPath(directoryPath.toString());
     }
@@ -138,7 +138,6 @@ public class DirectoryService {
 
         userService.deleteUser(userEntity);
 
-        UserDTO userDTO = userMapper.entityToDTO(userEntity);
-        return userDTO;
+        return userMapper.entityToDTO(userEntity);
     }
 }
