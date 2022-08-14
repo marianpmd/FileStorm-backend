@@ -21,7 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.marian.owncloudbackend.dto.FileEntityDTO;
-import com.marian.owncloudbackend.dto.SystemInfoDTO;
 import com.marian.owncloudbackend.entity.DirectoryEntity;
 import com.marian.owncloudbackend.entity.FileEntity;
 import com.marian.owncloudbackend.entity.UserEntity;
@@ -45,12 +44,13 @@ public class FileStoreService {
 
     private final FileEntityRepository fileEntityRepository;
     private final FileEntityMapper fileEntityMapper;
-    private final UserService userService;
+    public final UserService userService;
     private final DirectoryService directoryService;
     private final SimpMessagingTemplate template;
 
-    public File getFileByIdAndUser(Long id, UserEntity user) {
-        FileEntity byIdAndUser = fileEntityRepository.findByIdAndUser(id, user)
+    public File getFileByIdAndUser(Long id, String userEmail) {
+        UserEntity userByEmail = userService.getUserByEmail(userEmail);
+        FileEntity byIdAndUser = fileEntityRepository.findByIdAndUser(id, userByEmail)
                 .orElseThrow(() -> new FileEntityNotFoundException("The requested file was not found in DB!"));
 
         File file = FileUtils.getFile(byIdAndUser.getPath());
@@ -205,12 +205,15 @@ public class FileStoreService {
         return byUser.map(FileEntityDTO::fromEntity);
     }
 
-    public boolean deleteFileByIdAndUser(Long id, UserEntity user) {
-        FileEntity fileByIdAndUser = this.getFileEntityByIdAndUser(id, user);
+    public boolean deleteFileByIdAndUser(Long id, String userEmail) {
+        UserEntity userByEmail = userService.getUserByEmail(userEmail);
+        FileEntity fileByIdAndUser = this.getFileEntityByIdAndUser(id, userByEmail);
         File fileById = getFileById(id);
         fileEntityRepository.delete(fileByIdAndUser);
 
-        return deleteFileFromFS(fileById);
+        var deleted = deleteFileFromFS(fileById);
+        if (deleted) userService.recomputeUserStorage(userByEmail);
+        return deleted;
     }
 
     private boolean deleteFileFromFS(File file) {
@@ -247,20 +250,6 @@ public class FileStoreService {
         List<FileEntity> byUserAndNameContaining = fileEntityRepository.findByUserAndNameContaining(userByEmail, keyword);
 
         return fileEntityMapper.entitiesToDTOs(byUserAndNameContaining);
-    }
-
-    public SystemInfoDTO getSystemInfo() {
-
-        File file = new File(FileStoreUtils.getBaseDir());
-        long totalSpace = file.getTotalSpace();
-        long usableSpace = file.getUsableSpace();
-        long totalAssignedSpace = userService.getTotalAssignedSpace();
-        usableSpace = usableSpace - totalAssignedSpace;
-
-        return SystemInfoDTO.builder()
-                .totalSpace(totalSpace)
-                .usableSpace(usableSpace)
-                .build();
     }
 
     public FileEntityDTO makeFilePublic(Long id) {

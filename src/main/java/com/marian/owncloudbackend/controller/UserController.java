@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.marian.owncloudbackend.dto.AssignRequestDTO;
+import com.marian.owncloudbackend.dto.SystemInfoDTO;
 import com.marian.owncloudbackend.dto.UserAuthDTO;
 import com.marian.owncloudbackend.dto.UserDTO;
 import com.marian.owncloudbackend.entity.UserEntity;
@@ -76,12 +77,19 @@ public class UserController {
             @RequestParam Long userId,
             @RequestBody AssignRequestDTO assignRequest
     ) {
-        Long usableSpace = fileStoreService.getSystemInfo().usableSpace();
+        Long usableSpace = userService.getSystemInfo().usableSpace();
         UserDTO userDTO = userService.assignToUser(userId, assignRequest.amount(), usableSpace);
 
         notificationService.notifyUserForAssignment(userDTO, assignRequest.amount(), assignRequest.description());
 
         return ResponseEntity.ok(userDTO);
+    }
+
+    @GetMapping("/systemInfo")
+    @PreAuthorize("hasAuthority('admin')")
+    public ResponseEntity<SystemInfoDTO> getSystemInfo() {
+        SystemInfoDTO systemInfo = userService.getSystemInfo();
+        return ResponseEntity.ok(systemInfo);
     }
 
 

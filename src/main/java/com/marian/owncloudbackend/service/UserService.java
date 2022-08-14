@@ -1,5 +1,6 @@
 package com.marian.owncloudbackend.service;
 
+import java.io.File;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,6 +15,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.marian.owncloudbackend.dto.SystemInfoDTO;
 import com.marian.owncloudbackend.dto.UserDTO;
 import com.marian.owncloudbackend.entity.FileEntity;
 import com.marian.owncloudbackend.entity.UserEntity;
@@ -130,5 +132,19 @@ public class UserService implements UserDetailsService {
         }
         user.setOccupiedSpace(total);
         return userRepository.save(user);
+    }
+
+    public SystemInfoDTO getSystemInfo() {
+
+        File file = new File(FileStoreUtils.getBaseDir());
+        long totalSpace = file.getTotalSpace();
+        long usableSpace = file.getUsableSpace();
+        long totalAssignedSpace = getTotalAssignedSpace();
+        usableSpace = usableSpace - totalAssignedSpace;
+
+        return SystemInfoDTO.builder()
+                .totalSpace(totalSpace)
+                .usableSpace(usableSpace)
+                .build();
     }
 }
