@@ -21,7 +21,6 @@ public class SocketController {
     @MessageMapping("/fileUpdate")
     @SendToUser("/queue/fileUpdate")
     public String sendFileUpdate(Principal principal) {
-        System.out.println("Called" + principal);
         return  principal.getName();
     }
 

@@ -1,9 +1,6 @@
 package com.marian.owncloudbackend.security;
 
 
-import com.marian.owncloudbackend.filters.CustomAuthenticationFilter;
-import com.marian.owncloudbackend.filters.CustomAuthorisationFilter;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,9 +14,13 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.marian.owncloudbackend.filters.CustomAuthenticationFilter;
+import com.marian.owncloudbackend.filters.CustomAuthorisationFilter;
+
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
@@ -33,13 +34,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private String secret;
 
     @Bean
-    @SuppressWarnings(value = "deprecation")
     public PasswordEncoder bCryptPasswordEncoder() {
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();//use this if you can
-        NoOpPasswordEncoder encoder1 = (NoOpPasswordEncoder) NoOpPasswordEncoder.getInstance();
-        System.out.println(encoder.encode("admin"));
-        System.out.println(encoder.encode("11"));
-        return encoder;
+        return new BCryptPasswordEncoder();
     }
 
 
@@ -64,7 +60,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http
                 .csrf().disable()
                 .authorizeRequests()
-                .antMatchers("/login", "/user/register","/ws","/file/public")
+                .antMatchers("/login", "/user/register", "/ws", "/file/public")
                 .permitAll()
                 .antMatchers(HttpMethod.OPTIONS, "/**")
                 .permitAll()

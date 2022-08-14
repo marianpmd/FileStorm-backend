@@ -8,9 +8,9 @@ import org.springframework.stereotype.Service;
 
 import static com.marian.owncloudbackend.CommandRunner.ADMIN_EMAIL;
 
-import com.marian.owncloudbackend.DTO.NotificationDTO;
-import com.marian.owncloudbackend.DTO.UserDTO;
-import com.marian.owncloudbackend.DTO.UserStorageRequest;
+import com.marian.owncloudbackend.dto.NotificationDTO;
+import com.marian.owncloudbackend.dto.UserDTO;
+import com.marian.owncloudbackend.dto.UserStorageRequest;
 import com.marian.owncloudbackend.entity.NotificationEntity;
 import com.marian.owncloudbackend.entity.UserEntity;
 import com.marian.owncloudbackend.enums.NotificationState;

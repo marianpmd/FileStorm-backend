@@ -1,25 +1,30 @@
 package com.marian.owncloudbackend.controller;
 
-import com.marian.owncloudbackend.DTO.AssignRequestDTO;
-import com.marian.owncloudbackend.DTO.UserAuthDTO;
-import com.marian.owncloudbackend.DTO.UserDTO;
+import java.io.IOException;
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.marian.owncloudbackend.dto.AssignRequestDTO;
+import com.marian.owncloudbackend.dto.UserAuthDTO;
+import com.marian.owncloudbackend.dto.UserDTO;
 import com.marian.owncloudbackend.entity.UserEntity;
 import com.marian.owncloudbackend.service.DirectoryService;
 import com.marian.owncloudbackend.service.FileStoreService;
 import com.marian.owncloudbackend.service.NotificationService;
 import com.marian.owncloudbackend.service.UserService;
+
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
 
 @RestController
 @RequestMapping("/user")
@@ -38,12 +43,12 @@ public class UserController {
     }
 
     @GetMapping("/info")
-    public ResponseEntity<?> getUserInfo(String email){
+    public ResponseEntity<Object> getUserInfo(String email) {
         String authenticatedUserEmail = SecurityContextHolder.getContext()
                 .getAuthentication()
                 .getPrincipal()
                 .toString();
-        if (!authenticatedUserEmail.equals(email)){
+        if (!authenticatedUserEmail.equals(email)) {
             return new ResponseEntity<>("Not allowed", HttpStatus.FORBIDDEN);
         }
         UserDTO userDTObyEmail = userService.getUserDTObyEmail(email);
@@ -51,9 +56,9 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerNewUser(@RequestBody UserAuthDTO user) {
-        UserEntity userEntity = userService.registerNewUser(user.email(), user.password(),"user");
-        boolean wasSuccessful = this.fileStoreService.createUserDirectory(userEntity);
+    public ResponseEntity<UserAuthDTO> registerNewUser(@RequestBody UserAuthDTO user) {
+        UserEntity userEntity = userService.registerNewUser(user.email(), user.password(), "user");
+        this.fileStoreService.createUserDirectory(userEntity);
         return ResponseEntity.ok(user);
     }
 
@@ -72,7 +77,7 @@ public class UserController {
             @RequestBody AssignRequestDTO assignRequest
     ) {
         Long usableSpace = fileStoreService.getSystemInfo().usableSpace();
-        UserDTO userDTO = userService.assignToUser(userId, assignRequest.amount(),usableSpace);
+        UserDTO userDTO = userService.assignToUser(userId, assignRequest.amount(), usableSpace);
 
         notificationService.notifyUserForAssignment(userDTO, assignRequest.amount(), assignRequest.description());
 

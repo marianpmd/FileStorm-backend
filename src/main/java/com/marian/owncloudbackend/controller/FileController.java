@@ -3,7 +3,6 @@ package com.marian.owncloudbackend.controller;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
@@ -25,8 +24,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import com.marian.owncloudbackend.DTO.FileEntityDTO;
-import com.marian.owncloudbackend.DTO.SystemInfoDTO;
+import com.marian.owncloudbackend.dto.FileEntityDTO;
+import com.marian.owncloudbackend.dto.SystemInfoDTO;
 import com.marian.owncloudbackend.entity.UserEntity;
 import com.marian.owncloudbackend.service.FileStoreService;
 import com.marian.owncloudbackend.service.UserService;
@@ -45,7 +44,7 @@ public class FileController {
 
     @PostMapping("/upload")
     public ResponseEntity<FileEntityDTO> uploadFile(final MultipartFile file,
-                                                    @RequestParam final ArrayList<String> pathFromRoot,
+                                                    @RequestParam final List<String> pathFromRoot,
                                                     @RequestParam(required = false) final boolean shouldUpdate) throws IOException {
         log.info("New file to be uploaded : {}", file.getOriginalFilename());
 
@@ -55,13 +54,9 @@ public class FileController {
     }
 
     @GetMapping("/check")
-    public ResponseEntity<Boolean> checkFile(@RequestParam ArrayList<String> pathFromRoot,
+    public ResponseEntity<Boolean> checkFile(@RequestParam List<String> pathFromRoot,
                                              @RequestParam String filename) {
-        boolean fileExists = fileStoreService.checkIfExists(filename, pathFromRoot);
-        if (fileExists) {
-            return ResponseEntity.ok().body(true);
-        }
-
+        if (fileStoreService.checkIfExists(filename, pathFromRoot)) return ResponseEntity.ok().body(true);
         return ResponseEntity.ok().body(false);
 
     }
@@ -71,7 +66,7 @@ public class FileController {
                                                                   int page,
                                                                   int size,
                                                                   boolean asc,
-                                                                  @RequestParam ArrayList<String> pathFromRoot) {
+                                                                  @RequestParam List<String> pathFromRoot) {
         var userEmail = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         Page<FileEntityDTO> allFilesForUser = fileStoreService
@@ -129,7 +124,7 @@ public class FileController {
     }
 
     @GetMapping("/byKeyword")
-    public ResponseEntity<?> findAllLike(String keyword) {
+    public ResponseEntity<List<FileEntityDTO>> findAllLike(String keyword) {
         List<FileEntityDTO> allFilesLike = fileStoreService.getAllFilesLike(keyword);
 
         return ResponseEntity.ok(allFilesLike);
@@ -137,19 +132,19 @@ public class FileController {
 
     @GetMapping("/systemInfo")
     @PreAuthorize("hasAuthority('admin')")
-    public ResponseEntity<?> getSystemInfo(){
+    public ResponseEntity<SystemInfoDTO> getSystemInfo() {
         SystemInfoDTO systemInfo = fileStoreService.getSystemInfo();
         return ResponseEntity.ok(systemInfo);
     }
 
     @PutMapping("/makePublic")
-    public ResponseEntity<?> makeFilePublic(Long id){
+    public ResponseEntity<FileEntityDTO> makeFilePublic(Long id) {
         FileEntityDTO fileEntityDTO = fileStoreService.makeFilePublic(id);
         return ResponseEntity.ok(fileEntityDTO);
     }
 
     @PutMapping("/makePrivate")
-    public ResponseEntity<?> makeFilePrivate(Long id){
+    public ResponseEntity<FileEntityDTO> makeFilePrivate(Long id) {
         FileEntityDTO fileEntityDTO = fileStoreService.makeFilePrivate(id);
         return ResponseEntity.ok(fileEntityDTO);
     }

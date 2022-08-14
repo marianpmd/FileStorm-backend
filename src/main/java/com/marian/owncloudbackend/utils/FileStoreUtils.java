@@ -16,6 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class FileStoreUtils {
+    private FileStoreUtils() {
+    }
 
     public static final String DEFAULT_DIR_NAME = "OwnCloud";
     private static final Map<FileType, List<String>> fileTypeMap = Map.of(
@@ -90,12 +92,12 @@ public class FileStoreUtils {
     private static long getAmountFromValueAndUnit(String value, String unit) {
         switch (unit) {
             case "MB" -> {
-                var RATIO_MB_B =1_000_000L;
-                return Long.parseLong(value) * RATIO_MB_B;
+                var mbToB = 1_000_000L;
+                return Long.parseLong(value) * mbToB;
             }
             case "GB" -> {
-                var RATIO_GB_B = 1_000_000_000L;
-                return Long.parseLong(value) * RATIO_GB_B;
+                var gbToB = 1_000_000_000L;
+                return Long.parseLong(value) * gbToB;
             }
             default -> throw new AbnormalAssignmentAmountException("unit unknown");
         }

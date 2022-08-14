@@ -1,8 +1,7 @@
-package com.marian.owncloudbackend.DTO;
+package com.marian.owncloudbackend.dto;
 
 import com.marian.owncloudbackend.entity.FileEntity;
 import com.marian.owncloudbackend.enums.FileType;
-import lombok.Data;
 
 import java.io.Serializable;
 import java.math.BigInteger;

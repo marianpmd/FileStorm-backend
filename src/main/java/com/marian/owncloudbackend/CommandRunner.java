@@ -29,26 +29,34 @@ public class CommandRunner implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         if (!ArrayUtils.isEmpty(args)) {
-            if (!userService.existsByEmail(ADMIN_EMAIL)){
-                ListIterator<String> argIterator = List.of(args).listIterator();
-                while (argIterator.hasNext()) {
-                    var arg = argIterator.next();
-                    if (arg.equals("create-admin")) {
-                        var adminPassword = argIterator.next();
-                        if (!StringUtils.isEmpty(adminPassword)) {
-                            UserEntity admin = userService.registerNewUser(ADMIN_EMAIL, adminPassword, "admin");
-                            boolean wasSuccessful = this.fileStoreService.createUserDirectory(admin);
-                            if (wasSuccessful){
-                                log.info("Created admin dir successfully");
-                            }else {
-                                log.error("Creation of admin dir for admin {} failed",admin);
-                            }
-                        }
-                    }
-                }
+            processArgs(args);
 
+        }
+    }
+
+    private void processArgs(String[] args) {
+        if (!userService.existsByEmail(ADMIN_EMAIL)){
+            ListIterator<String> argIterator = List.of(args).listIterator();
+            while (argIterator.hasNext()) {
+                var arg = argIterator.next();
+                if (arg.equals("create-admin")) {
+                    var adminPassword = argIterator.next();
+                    createAdmin(adminPassword);
+                }
             }
 
+        }
+    }
+
+    private void createAdmin(String adminPassword) {
+        if (!StringUtils.isEmpty(adminPassword)) {
+            UserEntity admin = userService.registerNewUser(ADMIN_EMAIL, adminPassword, "admin");
+            boolean wasSuccessful = this.fileStoreService.createUserDirectory(admin);
+            if (wasSuccessful){
+                log.info("Created admin dir successfully");
+            }else {
+                log.error("Creation of admin dir for admin {} failed",admin);
+            }
         }
     }
 }

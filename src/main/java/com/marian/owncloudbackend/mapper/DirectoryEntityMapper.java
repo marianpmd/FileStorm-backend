@@ -8,7 +8,7 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.ReportingPolicy;
 
-import com.marian.owncloudbackend.DTO.DirectoryDTO;
+import com.marian.owncloudbackend.dto.DirectoryDTO;
 import com.marian.owncloudbackend.entity.DirectoryEntity;
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = "spring")
