@@ -136,6 +136,11 @@
             <artifactId>javamelody-spring-boot-starter</artifactId>
             <version>1.91.0</version>
         </dependency>
+        <dependency>
+            <groupId>net.bull.javamelody</groupId>
+            <artifactId>javamelody-dark-theme</artifactId>
+            <version>1.0</version>
+        </dependency>
     </dependencies>
 
 
