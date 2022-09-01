@@ -30,7 +30,6 @@ public class CommandRunner implements CommandLineRunner {
     public void run(String... args) throws Exception {
         if (!ArrayUtils.isEmpty(args)) {
             processArgs(args);
-
         }
     }
 
