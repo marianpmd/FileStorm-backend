@@ -3,6 +3,7 @@ package com.marian.owncloudbackend.entity;
 import com.marian.owncloudbackend.enums.FileType;
 import lombok.*;
 import org.hibernate.Hibernate;
+import org.springframework.context.annotation.Lazy;
 
 import javax.persistence.*;
 import java.math.BigInteger;
@@ -27,6 +28,9 @@ public class FileEntity {
     private LocalDateTime lastModified;
 
     private Boolean isPublic = false;
+
+    @Lob
+    private Byte[] thumbnail;
 
     @Enumerated(EnumType.STRING)
     private FileType fileType;

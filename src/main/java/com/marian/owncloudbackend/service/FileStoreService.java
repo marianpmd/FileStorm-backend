@@ -1,5 +1,7 @@
 package com.marian.owncloudbackend.service;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -9,9 +11,17 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.zip.DataFormatException;
+import java.util.zip.Deflater;
+import java.util.zip.Inflater;
+
+import javax.imageio.ImageIO;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.EnumUtils;
+import org.imgscalr.Scalr;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -103,6 +113,19 @@ public class FileStoreService {
 
         return byIdAndUser;
     }
+    public FileEntity getFileEntityByIdAndUser(Long id, String userEmail) {
+        UserEntity user = userService.getUserByEmail(userEmail);
+        FileEntity byIdAndUser = fileEntityRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new FileEntityNotFoundException("The requested file was not found in DB!"));
+
+        File file = FileUtils.getFile(byIdAndUser.getPath());
+
+        if (!file.exists()) {
+            throw new FileDoesNotExistException("The file " + file + " does not exist on FS!");
+        }
+
+        return byIdAndUser;
+    }
 
     public FileEntityDTO uploadNewFile(MultipartFile file, List<String> pathFromRoot, Boolean shouldUpdate) throws IOException {
         BigInteger size = BigInteger.valueOf(file.getSize());
@@ -131,7 +154,7 @@ public class FileStoreService {
         File fileToSave = finalPath.toFile();
 
         FileEntity fileEntity = new FileEntity(fileName, finalPath.toString(), size, LocalDateTime.now(), filetype, userByEmail);
-
+        fileEntity.setThumbnail(buildFileThumbnail(file, filetype));
         DirectoryEntity directoryEntity = directoryService.getDirectoryEntityFromNameAndUser(userByEmail, pathFromRoot)
                 .orElseThrow(() -> new DirectoryNotFoundException("Directory was not found for user : " + userEmail
                         + "and path : " + pathFromRoot));
@@ -158,6 +181,7 @@ public class FileStoreService {
                     .fileType(existingFileEntity.getFileType())
                     .user(existingFileEntity.getUser())
                     .directory(existingFileEntity.getDirectory())
+                    .thumbnail(buildFileThumbnail(file, existingFileEntity.getFileType()))
                     .build();
 
             fileEntityRepository.delete(existingFileEntity);
@@ -177,6 +201,38 @@ public class FileStoreService {
         FileEntityDTO fileEntityDTO = fileEntityMapper.fileEntityToFileEntityDTO(saved);
         template.convertAndSendToUser(userEmail, "/queue/newFile", fileEntityDTO);
         return fileEntityDTO;
+    }
+
+    private Byte[] buildFileThumbnail(MultipartFile file, FileType filetype) {
+        switch (filetype){
+
+            case IMAGE -> {
+                try {
+                    byte[] bytes = createThumbnail(file, 120).toByteArray();
+                    return ArrayUtils.toObject(bytes);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+//            case VIDEO -> {
+//            }
+//            case PDF -> {
+//            }
+
+            default -> {
+                return null;
+            }
+        }
+
+    }
+
+    private ByteArrayOutputStream createThumbnail(MultipartFile orginalFile, Integer width) throws IOException{
+        ByteArrayOutputStream thumbOutput = new ByteArrayOutputStream();
+        BufferedImage thumbImg = null;
+        BufferedImage img = ImageIO.read(orginalFile.getInputStream());
+        thumbImg = Scalr.resize(img, Scalr.Method.AUTOMATIC, Scalr.Mode.AUTOMATIC, width, Scalr.OP_ANTIALIAS);
+        ImageIO.write(thumbImg, orginalFile.getContentType().split("/")[1] , thumbOutput);
+        return thumbOutput;
     }
 
     public boolean createUserDirectory(UserEntity userEntity) {
@@ -272,5 +328,16 @@ public class FileStoreService {
         return fileEntityMapper.fileEntityToFileEntityDTO(entity);
     }
 
+
+    public byte[] getThumbnailForFile(Long id) {
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
+        FileEntity fileEntity = getFileEntityByIdAndUser(id, userEmail);
+
+        Byte[] thumbnail = fileEntity.getThumbnail();
+        if (thumbnail == null){
+            return null;
+        }
+        return ArrayUtils.toPrimitive(thumbnail);
+    }
 
 }
