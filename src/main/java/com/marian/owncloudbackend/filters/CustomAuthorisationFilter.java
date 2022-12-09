@@ -23,8 +23,8 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.marian.owncloudbackend.exceptions.LoginErrorException;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -43,6 +43,7 @@ public class CustomAuthorisationFilter extends OncePerRequestFilter {
         }
     }
 
+    @SneakyThrows
     private void processCookie(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
         Cookie[] cookies = request.getCookies();
         Cookie jwtCookie = null;
@@ -55,25 +56,21 @@ public class CustomAuthorisationFilter extends OncePerRequestFilter {
             }
 
         if (jwtCookie != null && !StringUtils.isEmpty(jwtCookie.getValue())) {
-            try {
-                String token = jwtCookie.getValue();
-                Algorithm algorithm = Algorithm.HMAC256(secret.getBytes());
+            String token = jwtCookie.getValue();
+            Algorithm algorithm = Algorithm.HMAC256(secret.getBytes());
 
-                JWTVerifier verifier = JWT.require(algorithm).build();
-                DecodedJWT decodedJWT = verifier.verify(token);
-                String username = decodedJWT.getSubject();
-                String[] roles = decodedJWT.getClaim("roles").asArray(String.class);
-                Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
-                Arrays.stream(roles)
-                        .forEach(value -> authorities.add(new SimpleGrantedAuthority(value)));
+            JWTVerifier verifier = JWT.require(algorithm).build();
+            DecodedJWT decodedJWT = verifier.verify(token);
+            String username = decodedJWT.getSubject();
+            String[] roles = decodedJWT.getClaim("roles").asArray(String.class);
+            Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
+            Arrays.stream(roles)
+                    .forEach(value -> authorities.add(new SimpleGrantedAuthority(value)));
 
-                UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, null, authorities);
-                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                filterChain.doFilter(request, response);
-            } catch (Exception exception) {
-                log.error("Error logging in: {}", exception.getMessage());
-                throw new LoginErrorException("Login has failed");
-            }
+            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, null, authorities);
+            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+            filterChain.doFilter(request, response);
+
 
         } else {
             filterChain.doFilter(request, response);

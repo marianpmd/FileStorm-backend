@@ -11,16 +11,17 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.zip.DataFormatException;
-import java.util.zip.Deflater;
-import java.util.zip.Inflater;
 
 import javax.imageio.ImageIO;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.EnumUtils;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.rendering.PDFRenderer;
+import org.bytedeco.javacv.FFmpegFrameGrabber;
+import org.bytedeco.javacv.Frame;
+import org.bytedeco.javacv.Java2DFrameConverter;
 import org.imgscalr.Scalr;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -113,6 +114,7 @@ public class FileStoreService {
 
         return byIdAndUser;
     }
+
     public FileEntity getFileEntityByIdAndUser(Long id, String userEmail) {
         UserEntity user = userService.getUserByEmail(userEmail);
         FileEntity byIdAndUser = fileEntityRepository.findByIdAndUser(id, user)
@@ -165,10 +167,10 @@ public class FileStoreService {
             log.info("File aready exists so replace on FS and update on DB");
 
             Files.delete(fileToSave.toPath());
-            try(OutputStream outputStream = Files.newOutputStream(fileToSave.toPath())) {
+            try (OutputStream outputStream = Files.newOutputStream(fileToSave.toPath())) {
                 IOUtils.copyLarge(file.getInputStream(), outputStream);
-            }catch (Exception e){
-                log.error("Exception when copying file {}, {}",fileEntity,e);
+            } catch (Exception e) {
+                log.error("Exception when copying file {}, {}", fileEntity, e);
             }
             FileEntity existingFileEntity = fileEntityRepository.findByName(fileName)
                     .orElseThrow(() -> new FileEntityNotFoundException("File was supposed to exist in the DB, SYNC ERROR."));
@@ -188,12 +190,13 @@ public class FileStoreService {
             saved = fileEntityRepository.save(newFile);
 
         } else {
-            try(OutputStream outputStream = Files.newOutputStream(fileToSave.toPath())){
+            try (OutputStream outputStream = Files.newOutputStream(fileToSave.toPath())) {
 
                 IOUtils.copyLarge(file.getInputStream(), outputStream);
-            }catch (Exception e){
-                log.error("Exception when copying file that is new {} , {} ",fileEntity,e);
+            } catch (Exception e) {
+                log.error("Exception when copying file that is new {} , {} ", fileEntity, e);
             }
+
             saved = fileEntityRepository.save(fileEntity);
         }
 
@@ -204,7 +207,7 @@ public class FileStoreService {
     }
 
     private Byte[] buildFileThumbnail(MultipartFile file, FileType filetype) {
-        switch (filetype){
+        switch (filetype) {
 
             case IMAGE -> {
                 try {
@@ -214,10 +217,22 @@ public class FileStoreService {
                     throw new RuntimeException(e);
                 }
             }
-//            case VIDEO -> {
-//            }
-//            case PDF -> {
-//            }
+            case VIDEO -> {
+                try {
+                    byte[] bytes = createThumbnailFromVideo(file, 120).toByteArray();
+                    return ArrayUtils.toObject(bytes);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            case PDF -> {
+                try {
+                    byte[] bytes = createThumbnailFromPDF(file, 120).toByteArray();
+                    return ArrayUtils.toObject(bytes);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
 
             default -> {
                 return null;
@@ -226,12 +241,43 @@ public class FileStoreService {
 
     }
 
-    private ByteArrayOutputStream createThumbnail(MultipartFile orginalFile, Integer width) throws IOException{
+    private ByteArrayOutputStream createThumbnailFromVideo(MultipartFile file, int width) throws IOException {
+        var output = new ByteArrayOutputStream();
+        try (FFmpegFrameGrabber g = new FFmpegFrameGrabber(file.getInputStream())) {
+            g.start();
+
+            try (Java2DFrameConverter converter = new Java2DFrameConverter()) {
+                Frame frame = g.grabImage();
+
+                BufferedImage bi = converter.convert(frame);
+
+                BufferedImage thumbImg = Scalr.resize(bi, Scalr.Method.AUTOMATIC, Scalr.Mode.AUTOMATIC, width, Scalr.OP_ANTIALIAS);
+                ImageIO.write(thumbImg, "PNG", output);
+                g.stop();
+                return output;
+            }
+        }
+    }
+
+    private ByteArrayOutputStream createThumbnailFromPDF(MultipartFile file, int width) throws IOException {
+        var output = new ByteArrayOutputStream();
+        PDDocument pd = PDDocument.load(file.getBytes());
+        PDFRenderer pr = new PDFRenderer(pd);
+        BufferedImage bi = pr.renderImageWithDPI(0, 300);
+
+        BufferedImage thumbImg = Scalr.resize(bi, Scalr.Method.AUTOMATIC, Scalr.Mode.AUTOMATIC, width, Scalr.OP_ANTIALIAS);
+        ImageIO.write(thumbImg, "PNG", output);
+        pd.close();
+        return output;
+    }
+
+    private ByteArrayOutputStream createThumbnail(MultipartFile orginalFile, Integer width) throws IOException {
         ByteArrayOutputStream thumbOutput = new ByteArrayOutputStream();
         BufferedImage thumbImg = null;
         BufferedImage img = ImageIO.read(orginalFile.getInputStream());
+
         thumbImg = Scalr.resize(img, Scalr.Method.AUTOMATIC, Scalr.Mode.AUTOMATIC, width, Scalr.OP_ANTIALIAS);
-        ImageIO.write(thumbImg, orginalFile.getContentType().split("/")[1] , thumbOutput);
+        ImageIO.write(thumbImg, orginalFile.getContentType().split("/")[1], thumbOutput);
         return thumbOutput;
     }
 
@@ -334,7 +380,7 @@ public class FileStoreService {
         FileEntity fileEntity = getFileEntityByIdAndUser(id, userEmail);
 
         Byte[] thumbnail = fileEntity.getThumbnail();
-        if (thumbnail == null){
+        if (thumbnail == null || ArrayUtils.isEmpty(thumbnail)) {
             return null;
         }
         return ArrayUtils.toPrimitive(thumbnail);
