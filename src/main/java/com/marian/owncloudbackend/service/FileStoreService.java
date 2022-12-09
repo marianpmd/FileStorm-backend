@@ -3,6 +3,8 @@ package com.marian.owncloudbackend.service;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
@@ -27,6 +29,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -386,4 +389,25 @@ public class FileStoreService {
         return ArrayUtils.toPrimitive(thumbnail);
     }
 
+    public boolean resyncAllThumbnails() {
+        List<FileEntity> allFiles = fileEntityRepository.findAll();
+        for (FileEntity allFile : allFiles) {
+            FileEntity fileEntity = null;
+            try {
+                fileEntity = updateThumbnail(allFile);
+            } catch (IOException e) {
+                log.error(e.getMessage());
+                return false;
+            }
+            fileEntityRepository.save(fileEntity);
+        }
+        return true;
+    }
+
+    private FileEntity updateThumbnail(FileEntity fileEntity) throws IOException {
+        MockMultipartFile multipartFile = new MockMultipartFile(fileEntity.getName(), new FileInputStream(fileEntity.getPath()));
+        Byte[] bytes = this.buildFileThumbnail(multipartFile, fileEntity.getFileType());
+        fileEntity.setThumbnail(bytes);
+        return fileEntity;
+    }
 }
