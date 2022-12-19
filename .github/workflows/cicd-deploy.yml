@@ -10,7 +10,14 @@ on:
     branches: [ "master" ]
 
 jobs:
-  build:
+  test:
+    runs-on: self-hosted
+    steps:
+    - uses: actions/checkout@v3
+    - name: Run tests
+      run: mvn clean test
+
+  build-and-deploy:
 
     runs-on: self-hosted
 
