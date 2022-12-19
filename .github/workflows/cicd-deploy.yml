@@ -24,7 +24,7 @@ jobs:
         cache: maven
     - name: Check dir
       run: pwd
-    -name: Create jar
+    - name: Create jar
       run: mvn clean package -DskipTests=true
       
  
