@@ -26,5 +26,12 @@ jobs:
       run: pwd
     - name: Create jar
       run: mvn clean package -DskipTests=true
+    - name: Delete existing jar
+      run: rm /home/marian/FileStorm-backend-1.0.jar
+    - name: Move new jar
+      run: mv /home/marian/actions-runner/_work/FileStorm-backend/FileStorm-backend/target/FileStorm-backend-1.0.jar /home/marian/FileStorm-backend-1.0.jar
+    - name: Restart service
+      run: sudo systemctl restart start_backend.service
+
       
  
