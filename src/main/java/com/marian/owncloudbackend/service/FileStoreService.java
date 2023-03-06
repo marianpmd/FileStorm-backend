@@ -405,7 +405,8 @@ public class FileStoreService {
     }
 
     private FileEntity updateThumbnail(FileEntity fileEntity) throws IOException {
-        MockMultipartFile multipartFile = new MockMultipartFile(fileEntity.getName(), new FileInputStream(fileEntity.getPath()));
+        MockMultipartFile multipartFile = new MockMultipartFile(fileEntity.getName(),fileEntity.getName(),"image/png", new FileInputStream(fileEntity.getPath()));
+
         Byte[] bytes = this.buildFileThumbnail(multipartFile, fileEntity.getFileType());
         fileEntity.setThumbnail(bytes);
         return fileEntity;
