@@ -4,7 +4,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
@@ -19,6 +18,7 @@ import javax.imageio.ImageIO;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
@@ -47,6 +47,7 @@ import com.marian.owncloudbackend.exceptions.OutOfSpaceException;
 import com.marian.owncloudbackend.mapper.FileEntityMapper;
 import com.marian.owncloudbackend.repository.FileEntityRepository;
 import com.marian.owncloudbackend.utils.FileStoreUtils;
+import com.marian.owncloudbackend.utils.SecurityContextUtils;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,9 +59,10 @@ public class FileStoreService {
 
     private final FileEntityRepository fileEntityRepository;
     private final FileEntityMapper fileEntityMapper;
-    public final UserService userService;
+    private final UserService userService;
     private final DirectoryService directoryService;
     private final SimpMessagingTemplate template;
+    private final SecurityContextUtils securityContextUtils;
 
     public File getFileByIdAndUser(Long id, String userEmail) {
         UserEntity userByEmail = userService.getUserByEmail(userEmail);
@@ -134,13 +136,11 @@ public class FileStoreService {
 
     public FileEntityDTO uploadNewFile(MultipartFile file, List<String> pathFromRoot, Boolean shouldUpdate) throws IOException {
         BigInteger size = BigInteger.valueOf(file.getSize());
-
         String fileName = file.getOriginalFilename();
-
         String contentType = file.getContentType();
         FileType filetype = FileStoreUtils.getFileTypeFromContentType(contentType);
 
-        String userEmail = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
+        String userEmail = securityContextUtils.getUserEmail();
         UserEntity userByEmail = this.userService.getUserByEmail(userEmail);
 
         BigInteger assignedSpace = userByEmail.getAssignedSpace();
@@ -167,13 +167,13 @@ public class FileStoreService {
         fileEntity.setDirectory(directoryEntity);
         FileEntity saved;
         if (fileToSave.exists() && shouldUpdate.equals(Boolean.TRUE)) {
-            log.info("File aready exists so replace on FS and update on DB");
+            log.info("File already exists so replace on FS and update on DB");
 
             Files.delete(fileToSave.toPath());
             try (OutputStream outputStream = Files.newOutputStream(fileToSave.toPath())) {
                 IOUtils.copyLarge(file.getInputStream(), outputStream);
             } catch (Exception e) {
-                log.error("Exception when copying file {}, {}", fileEntity, e);
+                log.error("Exception when copying file {}", fileEntity, e);
             }
             FileEntity existingFileEntity = fileEntityRepository.findByName(fileName)
                     .orElseThrow(() -> new FileEntityNotFoundException("File was supposed to exist in the DB, SYNC ERROR."));
@@ -197,7 +197,7 @@ public class FileStoreService {
 
                 IOUtils.copyLarge(file.getInputStream(), outputStream);
             } catch (Exception e) {
-                log.error("Exception when copying file that is new {} , {} ", fileEntity, e);
+                log.error("Exception when copying file that is new {} ", fileEntity, e);
             }
 
             saved = fileEntityRepository.save(fileEntity);
@@ -217,7 +217,7 @@ public class FileStoreService {
                     byte[] bytes = createThumbnail(file, 120).toByteArray();
                     return ArrayUtils.toObject(bytes);
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    throw new IllegalArgumentException(e);
                 }
             }
             case VIDEO -> {
@@ -225,7 +225,7 @@ public class FileStoreService {
                     byte[] bytes = createThumbnailFromVideo(file, 120).toByteArray();
                     return ArrayUtils.toObject(bytes);
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    throw new IllegalArgumentException(e);
                 }
             }
             case PDF -> {
@@ -233,12 +233,12 @@ public class FileStoreService {
                     byte[] bytes = createThumbnailFromPDF(file, 120).toByteArray();
                     return ArrayUtils.toObject(bytes);
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    throw new IllegalArgumentException(e);
                 }
             }
 
             default -> {
-                return null;
+                return new Byte[0];
             }
         }
 
@@ -280,7 +280,9 @@ public class FileStoreService {
         BufferedImage img = ImageIO.read(orginalFile.getInputStream());
 
         thumbImg = Scalr.resize(img, Scalr.Method.AUTOMATIC, Scalr.Mode.AUTOMATIC, width, Scalr.OP_ANTIALIAS);
-        ImageIO.write(thumbImg, orginalFile.getContentType().split("/")[1], thumbOutput);
+        String contentType = orginalFile.getContentType();
+        if (StringUtils.isEmpty(contentType)) return new ByteArrayOutputStream(0);
+        ImageIO.write(thumbImg, contentType.split("/")[1], thumbOutput);
         return thumbOutput;
     }
 
@@ -305,14 +307,14 @@ public class FileStoreService {
 
         DirectoryEntity directoryEntity = directoryService.getDirectoryEntityFromNameAndUser(userByEmail, pathFromRoot)
                 .orElseThrow();
-        Page<FileEntity> byUser = fileEntityRepository.findByDirectoryAndUser(directoryEntity, userByEmail, pageable);
+        Page<FileEntity> userFiles = fileEntityRepository.findByDirectoryAndUser(directoryEntity, userByEmail, pageable);
 
-        return byUser.map(FileEntityDTO::fromEntity);
+        return userFiles.map(FileEntityDTO::fromEntity);
     }
 
     public boolean deleteFileByIdAndUser(Long id, String userEmail) {
         UserEntity userByEmail = userService.getUserByEmail(userEmail);
-        FileEntity fileByIdAndUser = this.getFileEntityByIdAndUser(id, userByEmail);
+        FileEntity fileByIdAndUser = getFileEntityByIdAndUser(id, userByEmail);
         File fileById = getFileById(id);
         fileEntityRepository.delete(fileByIdAndUser);
 
@@ -384,7 +386,7 @@ public class FileStoreService {
 
         Byte[] thumbnail = fileEntity.getThumbnail();
         if (thumbnail == null || ArrayUtils.isEmpty(thumbnail)) {
-            return null;
+            return new byte[0];
         }
         return ArrayUtils.toPrimitive(thumbnail);
     }
@@ -405,7 +407,7 @@ public class FileStoreService {
     }
 
     private FileEntity updateThumbnail(FileEntity fileEntity) throws IOException {
-        MockMultipartFile multipartFile = new MockMultipartFile(fileEntity.getName(),fileEntity.getName(),"image/png", new FileInputStream(fileEntity.getPath()));
+        MockMultipartFile multipartFile = new MockMultipartFile(fileEntity.getName(), fileEntity.getName(), "image/png", new FileInputStream(fileEntity.getPath()));
 
         Byte[] bytes = this.buildFileThumbnail(multipartFile, fileEntity.getFileType());
         fileEntity.setThumbnail(bytes);

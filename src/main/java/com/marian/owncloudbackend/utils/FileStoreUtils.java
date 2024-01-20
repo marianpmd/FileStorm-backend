@@ -3,11 +3,15 @@ package com.marian.owncloudbackend.utils;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.util.CollectionUtils;
 
 import com.marian.owncloudbackend.enums.FileType;
 import com.marian.owncloudbackend.exceptions.AbnormalAssignmentAmountException;
@@ -16,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class FileStoreUtils {
+
     private FileStoreUtils() {
     }
 
@@ -49,8 +54,6 @@ public class FileStoreUtils {
         }
 
         log.info("Default dir has been found successfully");
-
-
     }
 
     public static String getBaseDir() {
@@ -62,20 +65,26 @@ public class FileStoreUtils {
     public static FileType getFileTypeFromContentType(String contentType) {
         for (Map.Entry<FileType, List<String>> fileTypeListEntry : fileTypeMap.entrySet()) {
             List<String> contentTypeList = fileTypeListEntry.getValue();
-            for (String ctype : contentTypeList) {
-                if (contentType.contains(ctype)) return fileTypeListEntry.getKey();
+            for (String cType : contentTypeList) {
+                if (contentType.contains(cType)) return fileTypeListEntry.getKey();
             }
         }
 
         return FileType.FILE;
     }
 
-
     public static Path computePathFromRoot(String email, List<String> pathsFromRoot) {
         List<String> fullPath = new LinkedList<>();
         fullPath.add(email);
-        fullPath.addAll(pathsFromRoot);
+        fullPath.addAll(sanitizePaths(pathsFromRoot));
         return Path.of(FileStoreUtils.getBaseDir(), fullPath.toArray(new String[0]));
+    }
+
+    private static Collection<String> sanitizePaths(List<String> pathsFromRoot) {
+        if (CollectionUtils.isEmpty(pathsFromRoot)) return Collections.emptyList();
+        return pathsFromRoot.stream()
+                .map(StringUtils::deleteWhitespace)
+                .toList();
     }
 
     public static long parseAmountString(String amount) {

@@ -20,7 +20,6 @@ import com.marian.owncloudbackend.dto.SystemInfoDTO;
 import com.marian.owncloudbackend.dto.UserAuthDTO;
 import com.marian.owncloudbackend.dto.UserDTO;
 import com.marian.owncloudbackend.entity.UserEntity;
-import com.marian.owncloudbackend.service.DirectoryService;
 import com.marian.owncloudbackend.service.FileStoreService;
 import com.marian.owncloudbackend.service.NotificationService;
 import com.marian.owncloudbackend.service.UserService;
@@ -32,7 +31,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
-    private final DirectoryService directoryService;
     private final FileStoreService fileStoreService;
     private final NotificationService notificationService;
 
@@ -66,7 +64,7 @@ public class UserController {
     @PreAuthorize("hasAuthority('admin')")
     @DeleteMapping("/delete")
     public ResponseEntity<UserDTO> deleteUserById(@RequestParam Long userId) throws IOException {
-        UserDTO userDTO = directoryService.deleteUserById(userId);
+        UserDTO userDTO = userService.deleteUserById(userId);
 
         return ResponseEntity.ok(userDTO);
     }

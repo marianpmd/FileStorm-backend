@@ -1,12 +1,16 @@
 package com.marian.owncloudbackend.service;
 
 import java.io.File;
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.commons.io.FileUtils;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,10 +21,12 @@ import org.springframework.stereotype.Service;
 
 import com.marian.owncloudbackend.dto.SystemInfoDTO;
 import com.marian.owncloudbackend.dto.UserDTO;
+import com.marian.owncloudbackend.entity.DirectoryEntity;
 import com.marian.owncloudbackend.entity.FileEntity;
 import com.marian.owncloudbackend.entity.UserEntity;
 import com.marian.owncloudbackend.exceptions.AbnormalAssignmentAmountException;
 import com.marian.owncloudbackend.mapper.UserMapper;
+import com.marian.owncloudbackend.repository.DirectoryRepository;
 import com.marian.owncloudbackend.repository.UserRepository;
 import com.marian.owncloudbackend.utils.FileStoreUtils;
 
@@ -33,6 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 public class UserService implements UserDetailsService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final DirectoryRepository directoryRepository;
 
     public List<UserDTO> getAllUsers() {
         List<UserEntity> all = userRepository.findAll();
@@ -132,6 +139,21 @@ public class UserService implements UserDetailsService {
         }
         user.setOccupiedSpace(total);
         return userRepository.save(user);
+    }
+
+    public UserDTO deleteUserById(Long userId) throws IOException {
+        UserEntity userEntity = userRepository.findById(userId).orElseThrow(()->new UsernameNotFoundException("User was not found!"));
+
+        List<DirectoryEntity> byUser = directoryRepository.findByUser(userEntity);
+        directoryRepository.deleteAll(byUser);
+
+        Path defaultPath = FileStoreUtils.computePathFromRoot(userEntity.getEmail(), Collections.emptyList());
+
+        FileUtils.forceDelete(defaultPath.toFile());
+
+        this.deleteUser(userEntity);
+
+        return userMapper.entityToDTO(userEntity);
     }
 
     public SystemInfoDTO getSystemInfo() {

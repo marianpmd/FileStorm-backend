@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -13,20 +12,18 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.FileUtils;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import com.marian.owncloudbackend.dto.DirectoriesWithParentDTO;
 import com.marian.owncloudbackend.dto.DirectoryDTO;
-import com.marian.owncloudbackend.dto.UserDTO;
 import com.marian.owncloudbackend.entity.DirectoryEntity;
 import com.marian.owncloudbackend.entity.UserEntity;
 import com.marian.owncloudbackend.exceptions.DirectoryNotFoundException;
 import com.marian.owncloudbackend.mapper.DirectoryEntityMapper;
-import com.marian.owncloudbackend.mapper.UserMapper;
 import com.marian.owncloudbackend.repository.DirectoryRepository;
 import com.marian.owncloudbackend.utils.FileStoreUtils;
+import com.marian.owncloudbackend.utils.SecurityContextUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -37,19 +34,19 @@ public class DirectoryService {
     private final DirectoryRepository directoryRepository;
     private final UserService userService;
     private final DirectoryEntityMapper directoryEntityMapper;
-    private final UserMapper userMapper;
+    private final SecurityContextUtils securityContextUtils;
 
     public DirectoryDTO createDirectory(List<String> pathsFromRoot) {
 
-        String userEmail = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
+        String userEmail = securityContextUtils.getUserEmail();
         UserEntity userByEmail = userService.getUserByEmail(userEmail);
 
         Path directoryPath = FileStoreUtils.computePathFromRoot(userEmail, pathsFromRoot);
 
         DirectoryEntity createdDirectory = null;
         try {
-            if (directoryPath.toFile().exists()){
-                throw new IllegalStateException("Dir already exists!");
+            if (directoryPath.toFile().exists()) {
+                throw new IllegalStateException("Dir already exists at path :" + directoryPath);
             }
             FileUtils.forceMkdir(directoryPath.toFile());
             if (!pathsFromRoot.get(pathsFromRoot.size() - 1).equals(userEmail)) {
@@ -62,8 +59,8 @@ public class DirectoryService {
         return directoryEntityMapper.directoryEntityToDirectoryDTO(createdDirectory);
     }
 
-    public DirectoriesWithParentDTO getAllDirectoriesInPath(List<String> pathsFromRoot) {
-        String userEmail = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
+    public DirectoriesWithParentDTO getAllDirectoriesInPathWithParent(List<String> pathsFromRoot) {
+        String userEmail = securityContextUtils.getUserEmail();
         UserEntity userByEmail = userService.getUserByEmail(userEmail);
 
         Path directoryPath = FileStoreUtils.computePathFromRoot(userEmail, pathsFromRoot);
@@ -126,18 +123,4 @@ public class DirectoryService {
         return directoryDTO;
     }
 
-    public UserDTO deleteUserById(Long userId) throws IOException {
-        UserEntity userEntity = userService.findById(userId);
-
-        List<DirectoryEntity> byUser = directoryRepository.findByUser(userEntity);
-        directoryRepository.deleteAll(byUser);
-
-        Path defaultPath = FileStoreUtils.computePathFromRoot(userEntity.getEmail(), Collections.emptyList());
-
-        FileUtils.forceDelete(defaultPath.toFile());
-
-        userService.deleteUser(userEntity);
-
-        return userMapper.entityToDTO(userEntity);
-    }
 }

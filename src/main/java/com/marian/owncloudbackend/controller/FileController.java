@@ -71,7 +71,7 @@ public class FileController {
                                                                   int size,
                                                                   boolean asc,
                                                                   @RequestParam List<String> pathFromRoot) {
-        var userEmail = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String userEmail = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         Page<FileEntityDTO> allFilesForUser = fileStoreService
                 .getAllFilesForUser(userEmail, sortBy, page, size, asc, pathFromRoot);
