@@ -92,7 +92,7 @@ public class FileStoreUtils {
         String value = split[0];
         String unit = split[1];
         return switch (amount) {
-            case "500 MB","100GB","50GB", "20 GB", "10 GB", "5 GB", "2 GB", "1 GB" -> getAmountFromValueAndUnit(value, unit);
+            case "500 MB","100 GB","50 GB", "20 GB", "10 GB", "5 GB", "2 GB", "1 GB" -> getAmountFromValueAndUnit(value, unit);
             default -> throw new AbnormalAssignmentAmountException("Assignment amount :" + amount + " is not " +
                     "allowed");
         };
