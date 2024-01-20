@@ -270,7 +270,7 @@ class FileControllerTest extends BaseIntegration {
 
         //Assert
         assertThat(afterDeleteFile).isEmpty();
-        assertThat(afterDeleteUser.getOccupiedSpace().intValue()).isZero(0);
+        assertThat(afterDeleteUser.getOccupiedSpace().intValue()).isZero();
         assertThat(Paths.get(testDirPath.toAbsolutePath().toString(), fileEntity.getName()).toFile()).doesNotExist();
 
     }
